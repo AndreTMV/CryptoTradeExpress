@@ -44,7 +44,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'coreapi',
     'djoser',
-    'rest framework simple jwt',
+    'rest_framework_simplejwt',
     'login',
 ]
 
@@ -135,9 +135,9 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # cors authorization
 CORS_ALLOWED_ORIGINS = ["http://localhost:5173"]
 
-REST_FRAMEWORK = {
-    'DEFAULT_SCHEMA_CLASS': 'rest_framework.schemas.coreapi.AutoSchema',
-}
+# REST_FRAMEWORK = {
+#     'DEFAULT_SCHEMA_CLASS': 'rest_framework.schemas.coreapi.AutoSchema',
+# }
 
 AUTH_USER_MODEL = 'login.User'
 REST_FRAMENORK = {
@@ -171,8 +171,18 @@ DJOSER = {
     'ACTIVATION_URL': 'activate/{uid}/{token}',
     'SEND_ACTIVATION_EMAIL': True,
     'SERIALIZERS': {
-        'user_create': 'users.serializers.CreateUserSerializer',
-        'user': "users.serializers.CreateUserSerializer",
+        'user_create': 'login.serializers.CreateUserSerializer',
+        'user': "login.serializers.CreateUserSerializer",
         'user_delete': "djoser.serializers.UserDeleteSerializer",      
     },
 }
+
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+EMAIL_HOST = env("EMAIL_HOST")
+EMAIL_USE_TLS = True
+EMAIL_PORT = env("EMAIL_PORT")
+EMAIL_HOST_USER = env("EMAIL_HOST_USER")
+EMAIL_HOST_PASSWORD = env("EMAIL_HOST_PASSWORD")
+DEFAULT_FROM_EMAIL = "cryptotrade@express.com"
+DOMAIN = env("DOMAIN")
+SITE_NAME = "Crypto Trade Express"

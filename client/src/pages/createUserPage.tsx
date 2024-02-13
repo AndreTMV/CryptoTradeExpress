@@ -1,5 +1,8 @@
 import React from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { toast } from "react-hot-toast";
+import { useDispatch, useSelector } from "react-redux";
+import { register } from "../features/auth/authSlice";
 
 export function CreateUserPage() {
   const [values, setValues] = React.useState({
@@ -8,38 +11,42 @@ export function CreateUserPage() {
     email:""
   });
 
-  function handleSubmit(evt: any) {
-    /*
-      Previene el comportamiento default de los
-      formularios el cual recarga el sitio
-    */
-    evt.preventDefault();
+  const { user, email, password } = values;
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+  const {userState, isError, isSuccess, isLoading, message } = useSelector((state) => state.auth)
 
-    // Aquí puedes usar values para enviar la información
+  function handleSubmit(evt: any) {
+    evt.preventDefault();
+    const userData = {
+      user,
+      email,
+      password
+    }
+    dispatch(register(userData));
   }
 
   function handleChange(evt:any) {
-    /*
-      evt.target es el elemento que ejecuto el evento
-      name identifica el input y value describe el valor actual
-    */
+    
     const { target } = evt;
     const { name, value } = target;
-
-    /*
-      Este snippet:
-      1. Clona el estado actual
-      2. Reemplaza solo el valor del
-         input que ejecutó el evento
-    */
     const newValues = {
       ...values,
       [name]: value,
     };
-
-    // Sincroniza el estado de nuevo
     setValues(newValues);
   }
+
+  React.useEffect(() => {
+      if (isError) {
+          toast.error(message)
+      }
+
+      if (isSuccess || user) {
+          navigate("/")
+          toast.success("Se ha enviado un correo de activacion. Porfavor revise su correo")
+      }
+  }, [isError, isSuccess, userState, navigate, dispatch])
 
   return (
     <div className="flex items-center justify-center h-screen">
@@ -47,9 +54,6 @@ export function CreateUserPage() {
             <h1 className="text-3xl font-bold mb-6 text-center text-blue-500">
               CryptoTradeExpress
             </h1>
-            <label className="block mb-2 text-sm font-bold" htmlFor="user">
-              User
-            </label>
             <input
               id="user"
               name="user"
@@ -57,12 +61,8 @@ export function CreateUserPage() {
               value={values.user}
               onChange={handleChange}
               placeholder="Usuario"
-              className="w-full border p-2 mb-4 rounded-md focus:outline-none focus:border-blue-500"
+              className="text-black w-full border p-2 mb-4 rounded-md focus:outline-none focus:border-blue-500"
             />
-
-            <label className="block mb-2 text-sm font-bold" htmlFor="password">
-              Password
-            </label>
             <input
               id="password"
               name="password"
@@ -70,12 +70,8 @@ export function CreateUserPage() {
               value={values.password}
               onChange={handleChange}
               placeholder="Contraseña"
-              className="w-full border p-2 mb-4 rounded-md focus:outline-none focus:border-blue-500"
+              className="text-black w-full border p-2 mb-4 rounded-md focus:outline-none focus:border-blue-500"
             />
-
-            <label className="block mb-2 text-sm font-bold" htmlFor="email">
-            Email
-            </label>
             <input
               id="email"
               name="email"
@@ -83,11 +79,10 @@ export function CreateUserPage() {
               value={values.email}
               onChange={handleChange}
               placeholder="Correo electrónico"
-              className="w-full border p-2 mb-4 rounded-md focus:outline-none focus:border-blue-500"
+              className="text-black w-full border p-2 mb-4 rounded-md focus:outline-none focus:border-blue-500"
             />
-
             <button
-              type="submit"
+              type="button"
               className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
               onClick={handleSubmit}
             >
