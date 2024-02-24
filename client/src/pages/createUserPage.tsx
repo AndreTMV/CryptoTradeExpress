@@ -2,28 +2,32 @@ import React from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "react-hot-toast";
 import { useDispatch, useSelector } from "react-redux";
-import { register } from "../features/auth/authSlice";
+import { register, reset, checkEmail, checkUsername } from "../features/auth/authSlice";
+import  validations  from "../features/passwordUserValidations";
 
 export function CreateUserPage() {
   const [values, setValues] = React.useState({
-    user: "",
+    username: "",
     password: "",
+    re_password: "",
     email:""
   });
 
-  const { user, email, password } = values;
+  const { username, email, password, re_password } = values;
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const {userState, isError, isSuccess, isLoading, message } = useSelector((state) => state.auth)
 
-  function handleSubmit(evt: any) {
-    evt.preventDefault();
-    const userData = {
-      user,
-      email,
-      password
+  function handleSubmit( evt: any )
+  {
+    evt.preventDefault()
+    if (password !== re_password) {
+        toast.error("Passwords do not match")
+    } else if ( validations.passWordValid( password,username ) && validations.userValid( username ) )
+    {
+      checkExistingUser();
+
     }
-    dispatch(register(userData));
   }
 
   function handleChange(evt:any) {
@@ -39,14 +43,35 @@ export function CreateUserPage() {
 
   React.useEffect(() => {
       if (isError) {
-          toast.error(message)
+        toast.error(message);
+          toast.error('Ha ocurrido un error, intentelo de nuevo.')
       }
 
-      if (isSuccess || user) {
+      if (isSuccess || userState) {
           navigate("/")
           toast.success("Se ha enviado un correo de activacion. Porfavor revise su correo")
       }
+      dispatch(reset())
   }, [isError, isSuccess, userState, navigate, dispatch])
+
+  async function checkExistingUser() {
+      const emailCheckResponse = await dispatch(checkEmail({ email }));
+      const usernameCheckResponse = await dispatch(checkUsername({ username }));
+
+      if (emailCheckResponse.payload.exists) {
+        toast.error("Este correo electrónico ya está registrado");
+      } else if (usernameCheckResponse.payload.exists) {
+        toast.error("Este nombre de usuario ya está en uso");
+      } else {
+        const userData = {
+          username,
+          email,
+          password,
+          re_password
+        };
+        dispatch(register(userData));
+      }
+    }
 
   return (
     <div className="flex items-center justify-center h-screen">
@@ -55,12 +80,21 @@ export function CreateUserPage() {
               CryptoTradeExpress
             </h1>
             <input
-              id="user"
-              name="user"
-              type="user"
-              value={values.user}
+              id="username"
+              name="username"
+              type="username"
+              value={values.username}
               onChange={handleChange}
               placeholder="Usuario"
+              className="text-black w-full border p-2 mb-4 rounded-md focus:outline-none focus:border-blue-500"
+            />
+            <input
+              id="email"
+              name="email"
+              type="email"
+              value={values.email}
+              onChange={handleChange}
+              placeholder="Correo electrónico"
               className="text-black w-full border p-2 mb-4 rounded-md focus:outline-none focus:border-blue-500"
             />
             <input
@@ -73,12 +107,12 @@ export function CreateUserPage() {
               className="text-black w-full border p-2 mb-4 rounded-md focus:outline-none focus:border-blue-500"
             />
             <input
-              id="email"
-              name="email"
-              type="email"
-              value={values.email}
+              id="re_password"
+              name="re_password"
+              type="password"
+              value={values.re_password}
               onChange={handleChange}
-              placeholder="Correo electrónico"
+              placeholder="Confirmar Contraseña"
               className="text-black w-full border p-2 mb-4 rounded-md focus:outline-none focus:border-blue-500"
             />
             <button

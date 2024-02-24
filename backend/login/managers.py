@@ -1,6 +1,6 @@
 from django.contrib.auth.base_user import BaseUserManager
-from django. core.exceptions import ValidationError 
-from django. core. validators import validate_email
+from django.core.exceptions import ValidationError 
+from django.core.validators import validate_email
 from django.utils.translation import gettext_lazy as _ 
 
 class CustomUserManager(BaseUserManager):
@@ -10,11 +10,9 @@ class CustomUserManager(BaseUserManager):
         except ValidationError:
             raise ValueError (_("Debes proporcionar un email valido"))
 
-    def create_user(self, first_name, last_name, email, password, **extra_fields):
-        if not first_name:
-            raise ValueError(_("Debes proporcionar un nombre"))
-        if not last_name:
-            raise ValueError(_("Debes proporcionar un apellido"))
+    def create_user(self, username, email, password, **extra_fields):
+        if not username:
+            raise ValueError(_("Debes proporcionar un usuario"))
         if email:
             email = self.normalize_email(email) 
             self.email_validator(email)
@@ -22,8 +20,7 @@ class CustomUserManager(BaseUserManager):
             raise ValueError(_("El email es requerido"))
 
         user = self.model(
-            first_name=first_name,
-            last_name=last_name,
+            username = username,
             email=email,
             **extra_fields
         )
@@ -35,13 +32,13 @@ class CustomUserManager(BaseUserManager):
         user.save()
         return user
 
-    def create_superuser(self, first_name, last_name, email, password, **extra_fields):
+    def create_superuser(self, username, email, password, **extra_fields):
         extra_fields.setdefault("is_staff", True)
         extra_fields.setdefault("is_superuser", True)
         extra_fields.setdefault("is_active", True)
 
         if extra_fields.get("is_superuser") is not True:
-            raise ValueError(_("superuser debe ser verdadedero"))
+            raise ValueError(_("superuser debe ser verdadero"))
 
         if extra_fields.get("is_staff") is not True:
             raise ValueError(_("superuser debe ser staff"))
@@ -55,7 +52,7 @@ class CustomUserManager(BaseUserManager):
         else:
             raise ValueError(_("El email es requerido"))
 
-        user = self.create_user(first_name, last_name, email, password, **extra_fields)
+        user = self.create_user( username=username,email=email, password=password, **extra_fields)
         user.save()
         return user
 

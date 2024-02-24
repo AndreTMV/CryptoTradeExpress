@@ -1,28 +1,51 @@
-import React from "react";
-import { Link } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { useDispatch, useSelector } from 'react-redux';
+import { login, sendOTP, reset } from '../features/auth/authSlice';
+import { toast } from 'react-hot-toast';
 
 export function LoginPage() {
-  const [values, setValues] = React.useState({
-    user: "",
+  const [values, setValues] = useState({
+    email: "",
     password: "",
   });
+  const { email, password } = values;
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+  const { isError, isSuccess, message } = useSelector((state) => state.auth);
 
-  function handleSubmit(evt: any) {
+  function handleSubmit(evt) {
     evt.preventDefault();
-    // Aquí puedes usar values para enviar la información
-  }
-
-  function handleChange(evt:any) {
-    const { target } = evt;
-    const { name, value } = target;
-
-    const newValues = {
-      ...values,
-      [name]: value,
+    const userData = {
+      email,
+      password,
     };
-
-    setValues(newValues);
+    dispatch(login(userData));
   }
+
+  function handleChange(evt) {
+    const { name, value } = evt.target;
+    setValues(prevState => ({
+      ...prevState,
+      [name]: value
+    }));
+  }
+
+  useEffect(() => {
+    if (isError) {
+      toast.error("El email o contraseña son incorrectas");
+    }
+
+    if (isSuccess) {
+      dispatch(sendOTP({ email, password }));
+      toast.success("Se ha enviado el otp a tu correo.");
+      navigate('/OTP-verification', {
+      state: { email, password }
+    });
+    }
+
+    dispatch(reset());
+  }, [isError, isSuccess, email, password, dispatch]);
 
   return (
     <div className="flex items-center justify-center h-screen">
@@ -31,10 +54,10 @@ export function LoginPage() {
           CryptoTradeExpress
         </h1>
         <input
-          id="user"
-          name="user"
-          type="user"
-          value={values.user}
+          id="email"
+          name="email"
+          type="email"
+          value={email}
           onChange={handleChange}
           placeholder="Usuario"
           className="text-black w-full border p-2 mb-4 rounded-md focus:outline-none focus:border-blue-500"
@@ -43,7 +66,7 @@ export function LoginPage() {
           id="password"
           name="password"
           type="password"
-          value={values.password}
+          value={password}
           onChange={handleChange}
           placeholder="Contraseña"
           className="text-black w-full border p-2 mb-4 rounded-md focus:outline-none focus:border-blue-500"
