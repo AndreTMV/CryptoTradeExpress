@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from 'react-redux';
-import { login, sendOTP, reset } from '../features/auth/authSlice';
+import { login, sendOTP, reset } from '../../features/auth/authSlice';
 import { toast } from 'react-hot-toast';
 
 export function LoginPage() {
@@ -12,7 +12,7 @@ export function LoginPage() {
   const { email, password } = values;
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { isError, isSuccess, message } = useSelector((state) => state.auth);
+  const { isError, isSuccess, message, userState } = useSelector((state) => state.auth);
 
   function handleSubmit(evt) {
     evt.preventDefault();
@@ -36,7 +36,7 @@ export function LoginPage() {
       toast.error("El email o contraseña son incorrectas");
     }
 
-    if (isSuccess) {
+    if (isSuccess || userState) {
       dispatch(sendOTP({ email, password }));
       toast.success("Se ha enviado el otp a tu correo.");
       navigate('/OTP-verification', {
@@ -45,7 +45,7 @@ export function LoginPage() {
     }
 
     dispatch(reset());
-  }, [isError, isSuccess, email, password, dispatch]);
+  }, [isError, isSuccess, navigate, dispatch]);
 
   return (
     <div className="flex items-center justify-center h-screen">

@@ -6,8 +6,6 @@ import string
 # Rest Framework Imports
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
-from rest_framework.decorators import api_view
-from rest_framework.response import Response
 
 from .managers import CustomUserManager
 
@@ -63,16 +61,16 @@ def checkOTP(request):
             otp_verification = OTPVerification.objects.get(email=email, otp=otp)
             if otp_verification.is_verified:
                 # El OTP ya ha sido verificado antes
-                return Response({"status": True})
+                return Response({"status": True}, status=200)
             else:
                 # Marcar el OTP como verificado
                 otp_verification.is_verified = True
                 otp_verification.save()
-                return Response({"status": True})
+                return Response({"status": True}, status=200)
         except OTPVerification.DoesNotExist:
-            return Response({"status": False})  # OTP incorrecto
+            return Response({"status": False}, status=400)  # OTP incorrecto
     else:
-        return Response({"status": False})  # Datos faltantes
+        return Response({"status": False}, status=400)  # Datos faltantes
 
 @api_view(['GET'])
 def check_username_exists(request):
@@ -95,4 +93,21 @@ def check_email_exists(request):
         return Response({'exists': email_exists})
 
     return Response({'error': 'Debes proporcionar un email en los parámetros de consulta.'}, status=400)
+
+@api_view(['GET'])
+def user_is_staff(request):
+    username = request.query_params.get('username', None)
+    User = get_user_model()
+
+    if username:
+        try:
+            user = User.objects.get(username=username)
+            if user.is_staff:
+                return Response({"El usuario es moderador"}, status=200)
+            else:
+                return Response({"El usuario no es moderador"}, status=400)
+        except User.DoesNotExist:
+            return Response({"El usuario no existe"}, status=400)
+
+    return Response({'error': 'Debes proporcionar un usuario en los parámetros de consulta.'}, status=400)
 

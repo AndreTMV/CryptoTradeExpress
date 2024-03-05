@@ -1,16 +1,21 @@
-import React from 'react';
-import {BrowserRouter, Routes, Route, Navigate} from 'react-router-dom'
+import {BrowserRouter, Routes, Route} from 'react-router-dom'
 import {Navigation} from './components/Navigation'
-import {LoginPage} from './pages/loginPage'
-import { CreateUserPage } from './pages/createUserPage';
+import {LoginPage} from './pages/login/loginPage'
+import { CreateUserPage } from './pages/login/createUserPage';
 import Dashboard from './pages/DashBoard';
-import { ResetPasswordPage } from './pages/ResetPasswordPage';
-import { ActivationPage } from './pages/ActivatePage';
-import NotFoundPage  from './pages/NotFoundPage';
-import { ResetPasswordPageConfirm } from './pages/ResetPasswordConfirmPage';
+import { ResetPasswordPage } from './pages/login/ResetPasswordPage';
+import { ActivationPage } from './pages/login/ActivatePage';
+import NotFoundPage  from './pages/login/NotFoundPage';
+import { ResetPasswordPageConfirm } from './pages/login/ResetPasswordConfirmPage';
 import {Toaster} from 'react-hot-toast'
 import Nav from "./components/Nav"
-import { OTPVerification } from './pages/OTPVerification';
+import { OTPVerification } from './pages/login/OTPVerification';
+import  UploadedVideosPage    from './pages/videos/videoMain';
+import { UploadVideoPage } from './pages/videos/uploadVideoForm';
+import VideosSectionPage from './pages/videos/videosSection';
+import { UploadSection } from './pages/videos/uploadSection';
+import { DeleteSection } from './pages/videos/deleteSection';
+import  NotAcceptedVideosPage from './pages/videos/noAcceptedVideos';
 
 function App()
 {
@@ -27,6 +32,12 @@ function App()
           <Route path="/reset-password" element={<ResetPasswordPage/>} />
           <Route path="/password/reset/confirm/:uid/:token" element={<ResetPasswordPageConfirm />} />
           <Route path='/OTP-verification' element={<OTPVerification/>}/>
+          <Route path='/uploadVideo' element={<UploadVideoPage/>}/>
+          <Route path='/videosMain' element={<UploadedVideosPage/>}/>
+          <Route path='/sectionsPage' element={<VideosSectionPage/>}/>
+          <Route path='/uploadSection' element={<UploadSection/>}/>
+          <Route path='/deleteSection' element={<DeleteSection/>}/>
+          <Route path='/notAcceptedVideos' element={<NotAcceptedVideosPage/>}/>
           <Route path='*' element={<NotFoundPage/>}></Route>
         </Routes>
         <Toaster/>

@@ -47,8 +47,11 @@ INSTALLED_APPS = [
     'corsheaders',
     "djoser",
     "rest_framework_simplejwt",
+    'coreapi',
     # Internal Apps
     'login',
+    'perfil',
+    'videos',
 ]
 
 MIDDLEWARE = [
@@ -92,7 +95,16 @@ DATABASES = {
         "NAME": BASE_DIR / "db.sqlite3",
     }
 }
-
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.postgresql',
+#         'NAME': 'nombre_de_tu_basededatos',
+#         'USER': 'tu_usuario_de_postgresql',
+#         'PASSWORD': 'tu_contraseña_de_postgresql',
+#         'HOST': 'localhost',
+#         'PORT': '5432',
+#     }
+# }
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
 
@@ -139,6 +151,7 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
+    'DEFAULT_SCHEMA_CLASS': 'rest_framework.schemas.coreapi.AutoSchema',
 }
 
 SIMPLE_JWT = {
@@ -170,16 +183,20 @@ DJOSER = {
         'user_delete': "djoser.serializers.UserDeleteSerializer",      
     },
 }
-
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
-EMAIL_HOST = env("EMAIL_HOST")
+# EMAIL_HOST = env("EMAIL_HOST")
 EMAIL_USE_TLS = True
-EMAIL_PORT = env("EMAIL_PORT")
+# EMAIL_PORT = env("EMAIL_PORT")
 EMAIL_HOST_USER = env("EMAIL_HOST_USER")
 EMAIL_HOST_PASSWORD = env("EMAIL_HOST_PASSWORD")
 DEFAULT_FROM_EMAIL = "info@crypto-trade-express.com"
-DOMAIN = env("DOMAIN")
+# DOMAIN = env("DOMAIN")
 SITE_NAME = "Crypto Trade Express"
+EMAIL_HOST='smtp.gmail.com'
+EMAIL_HOST_USER='andretmv12345@gmail.com'
+EMAIL_HOST_PASSWORD='vfhfqfzmkammresl'
+EMAIL_PORT=587
+DOMAIN='localhost:5173'
 
 LOGGING = {
     'version': 1,

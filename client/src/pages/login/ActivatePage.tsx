@@ -4,8 +4,8 @@ import { toast } from "react-hot-toast";
 import { useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux'
-import { activate, reset } from '../features/auth/authSlice'
-import Spinner from '../components/Spinner'
+import { activate, reset } from '../../features/auth/authSlice'
+import Spinner from '../../components/Spinner'
 export function ActivationPage() {
 
       const { uid, token } = useParams()

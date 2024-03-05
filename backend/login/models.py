@@ -33,7 +33,7 @@ class User(AbstractBaseUser, PermissionsMixin):
 # * Table that stores the OTP and is verfied or not
 class OTPVerification(models.Model):
     email = models.EmailField(_('Email'), max_length=254)
-    otp = models.CharField(max_length=7, default=get_random_string(length=7, allowed_chars='abcdefghijklmnopqrstuvwxyz0123456789'))
+    otp = models.CharField(max_length=7)
     is_verified = models.BooleanField(default=False)
 
     def __str__(self):

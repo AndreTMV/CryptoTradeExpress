@@ -1,31 +1,29 @@
 import React from "react";
-import { Link, useNavigate, useLocation } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { toast } from "react-hot-toast";
 import { useDispatch, useSelector } from 'react-redux'
-import { checkOTP, reset, getUserInfo, login } from '../features/auth/authSlice'
-import Spinner from "../components/Spinner";
+import { resetPassword, reset } from '../../features/auth/authSlice'
+import Spinner from "../../components/Spinner";
 
-export function OTPVerification() {
+export function ResetPasswordPage() {
   const [values, setValues] = React.useState({
-    OTP:""
+    email:""
   });
 
-  const { OTP } = values;
-  const dispatch = useDispatch()
-  const navigate = useNavigate()
-  const {userState, isError, isSuccess, isLoading, message } = useSelector((state) => state.auth)
-  const location = useLocation();
-  const { state } = location;
-  const { email, password } = state || {};
+  const { email } = values;
+
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+
+    const { isLoading, isError, isSuccess, message } = useSelector((state) => state.auth)
+
   function handleSubmit(evt: any) {
     evt.preventDefault();
     const userData = {
-      OTP,
-      email,
-      password
+        email
     }
 
-    dispatch( checkOTP( userData ) )
+    dispatch(resetPassword(userData))
   }
 
   function handleChange(evt:any) {
@@ -43,13 +41,13 @@ export function OTPVerification() {
           toast.error(message)
       }
       if (isSuccess) {
-          navigate(isSuccess ? "/dashboard" :"/OTPVerification")
+          navigate("/")
+          toast.success("Un email de restablecimiento ha sido enviado a su correo.")
+
       }
-      dispatch( reset() )
-      dispatch(getUserInfo())
 
 
-  }, [isError, isSuccess, userState, navigate, dispatch])
+  }, [isError, isSuccess, message, navigate, dispatch])
 
   return (
     <div className="flex items-center justify-center h-screen">
@@ -60,12 +58,12 @@ export function OTPVerification() {
             {isLoading && <Spinner />}
 
             <input
-              id="OTP"
-              name="OTP"
-              type="password"
-              value={values.OTP}
+              id="email"
+              name="email"
+              type="email"
+              value={values.email}
               onChange={handleChange}
-              placeholder="codigo OTP"
+              placeholder="Correo electrónico"
               className="text-black w-full border p-2 mb-4 rounded-md focus:outline-none focus:border-blue-500"
             />
             <button
@@ -73,7 +71,7 @@ export function OTPVerification() {
               className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
               onClick={handleSubmit}
             >
-           Iniciar sesion 
+            Cambiar Contraseña
             </button>
             <button className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded ml-10">
               <Link to="/">Inicio</Link>

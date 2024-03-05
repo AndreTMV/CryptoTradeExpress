@@ -2,8 +2,8 @@ import React from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { toast } from "react-hot-toast";
 import { useDispatch, useSelector } from "react-redux";
-import { reset, resetPasswordConfirm } from "../features/auth/authSlice";
-import validations from "../features/passwordUserValidations";
+import { reset, resetPasswordConfirm } from "../../features/auth/authSlice";
+import validations from "../../features/passwordUserValidations";
 
 export function ResetPasswordPageConfirm()
 {

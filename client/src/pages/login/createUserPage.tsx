@@ -2,8 +2,8 @@ import React from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "react-hot-toast";
 import { useDispatch, useSelector } from "react-redux";
-import { register, reset, checkEmail, checkUsername } from "../features/auth/authSlice";
-import  validations  from "../features/passwordUserValidations";
+import { register, reset, checkEmail, checkUsername } from "../../features/auth/authSlice";
+import  validations  from "../../features/passwordUserValidations";
 
 export function CreateUserPage() {
   const [values, setValues] = React.useState({

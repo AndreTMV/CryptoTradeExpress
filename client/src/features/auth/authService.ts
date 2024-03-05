@@ -11,6 +11,7 @@ const CHECK_USERNAME= `${BACKEND_DOMAIN}/api/v1/auth/checkUsernameInfo/`
 const CHECK_EMAIL= `${BACKEND_DOMAIN}/api/v1/auth/checkEmailInfo/`
 const SEND_OTP = `${BACKEND_DOMAIN}/api/v1/auth/sendOTP/`
 const CHECK_OTP = `${BACKEND_DOMAIN}/api/v1/auth/checkOTP/`
+const CHECK_STAFF = `${BACKEND_DOMAIN}/api/v1/auth/isStaff/`
 
 const register = async ( userData: any ) =>
 {
@@ -108,6 +109,7 @@ const checkUserName = async ( userData: any ) =>
     const response = await axios.get(CHECK_USERNAME, config)
     return response.data
 }
+
 const checkEmail = async ( userData: any ) =>
 { 
     const config = {
@@ -138,7 +140,19 @@ const checkOTP = async (userData:any) => {
     const response = await axios.put( CHECK_OTP, userData, config )
     return response.data
 }
-const authService = {register, login, logout, activate, resetPassword, resetPasswordConfirm, getUserInfo, checkEmail, checkUserName, sendOTP, checkOTP}
+
+const checkStaff = async ( userData: any ) =>
+{ 
+    const config = {
+        params: {
+            username:userData.username,
+       }
+    }
+    const response = await axios.get(CHECK_STAFF, config)
+    return response.data
+}
+
+const authService = {register, login, logout, activate, resetPassword, resetPasswordConfirm, getUserInfo, checkEmail, checkUserName, sendOTP, checkOTP, checkStaff}
 
 export default authService 
 

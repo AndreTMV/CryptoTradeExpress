@@ -9,7 +9,10 @@ const initialState = {
 	isError: false,
 	isSuccess: false,
 	isLoading: false,
-	mesagge: '',
+	message: '',
+    OTPverified:false,
+    logoutState:false,
+    isStaff:false
 };
 
 export const register = createAsyncThunk(
@@ -171,6 +174,23 @@ export const checkOTP = createAsyncThunk(
         }
     }
 )
+
+export const checkStaff = createAsyncThunk(
+    "auth/checkStaff",
+    async ( userData, thunkAPI ) =>
+    {
+        try
+        {
+            await authService.checkStaff(userData)
+        } catch (error) {
+            const message = (error.response && error.response.data
+                && error.response.data.message) ||
+                error.message || error.toString()
+
+            return thunkAPI.rejectWithValue(message)
+        }
+    }
+)
 export const authSlice = createSlice({
     name: "auth",
     initialState,
@@ -180,6 +200,8 @@ export const authSlice = createSlice({
             state.isError = false
             state.isSuccess = false
             state.message = false
+            state.OTPverified = false
+            state.isStaff = false
         }
     },
     extraReducers: (builder) => {
@@ -206,6 +228,7 @@ export const authSlice = createSlice({
                 state.isLoading = false
                 state.isSuccess = true
                 state.userState = action.payload
+                state.logoutState = false
             })
             .addCase(login.rejected, (state, action) => {
                 state.isLoading = false
@@ -216,6 +239,7 @@ export const authSlice = createSlice({
             })
             .addCase(logout.fulfilled, (state) => {
                 state.userState = null
+                state.logoutState = false
             })
             .addCase(activate.pending, (state) => {
                 state.isLoading = true
@@ -264,10 +288,10 @@ export const authSlice = createSlice({
                 state.userInfo = action.payload
             } )
             .addCase(checkEmail.fulfilled, (state, action) => {
-                state.mesagge = action.payload
+                state.message = action.payload
             } )
             .addCase(checkUsername.fulfilled, (state, action) => {
-                state.mesagge = action.payload
+                state.message = action.payload
             } )
             .addCase(sendOTP.pending, (state) => {
                 state.isLoading = true
@@ -288,14 +312,28 @@ export const authSlice = createSlice({
             })
             .addCase(checkOTP.fulfilled, (state) => {
                 state.isLoading = false
-                state.isSuccess = true
+                state.OTPverified = true
+                state.logoutState = true
             })
             .addCase(checkOTP.rejected, (state, action) => {
                 state.isLoading = false
-                state.isSuccess = false
+                state.OTPverified = false
                 state.isError = true
                 state.message = action.payload
-                state.userState = null
+            })
+            .addCase(checkStaff.pending, (state) => {
+                state.isLoading = true
+            })
+            .addCase(checkStaff.fulfilled, (state, action) => {
+                state.isLoading = false
+                state.isStaff = true
+                state.logoutState = false
+            })
+            .addCase(checkStaff.rejected, (state, action) => {
+                state.isLoading = false
+                state.isStaff = false
+                state.isError = true
+                state.message = action.payload
             })
     }
 })
