@@ -5,6 +5,7 @@ import videosService  from './videosService';
 const initialState = {
     videos:{},
     sections:{},
+    video:{},
 	videoIsError: false,
 	videoIsSuccess: false,
 	videoIsLoading: false,
@@ -208,6 +209,21 @@ export const getNoAcceptedVideos = createAsyncThunk(
 		}
 	}
 )
+
+export const removeVideo = createAsyncThunk(
+    "videos/removeVideo",
+    async (videoData, thunkAPI) => {
+        try {
+            return await videosService.removeVideo(videoData)
+        } catch (error) {
+            const message = (error.response && error.response.data
+                && error.response.data.message) ||
+                error.message || error.toString()
+
+            return thunkAPI.rejectWithValue(message)
+        }
+    }
+)
 export const videosSlice = createSlice({
     name: "videos",
     initialState,
@@ -224,9 +240,10 @@ export const videosSlice = createSlice({
             .addCase(uploadVideo.pending, (state) => {
                 state.videoIsLoading = true
             })
-            .addCase(uploadVideo.fulfilled, (state) => {
+            .addCase(uploadVideo.fulfilled, (state, action) => {
                 state.videoIsLoading = false
                 state.videoIsSuccess = true
+                state.video = action.payload
             })
             .addCase(uploadVideo.rejected, (state, action) => {
                 state.videoIsLoading = false
@@ -369,6 +386,19 @@ export const videosSlice = createSlice({
                 state.videoIsSuccess = true
             })
             .addCase(deleteVideo.rejected, (state, action) => {
+                state.videoIsLoading = false
+                state.videoIsSuccess = false
+                state.videoIsError = true
+                state.videoMessage = action.payload
+            })
+            .addCase(removeVideo.pending, (state) => {
+                state.videoIsLoading = true
+            })
+            .addCase(removeVideo.fulfilled, (state) => {
+                state.videoIsLoading = false
+                state.videoIsSuccess = true
+            })
+            .addCase(removeVideo.rejected, (state, action) => {
                 state.videoIsLoading = false
                 state.videoIsSuccess = false
                 state.videoIsError = true

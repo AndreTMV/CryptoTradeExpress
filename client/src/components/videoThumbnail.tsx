@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import ReactPlayer from "react-player";
-import { updateViews, updateStars } from "../features/videos/videosSlice";
+import { updateViews, updateStars, removeVideo } from "../features/videos/videosSlice";
 import { useDispatch } from 'react-redux';
 import RatingStars from "./ratingStars";
 
@@ -34,6 +34,7 @@ function VideoThumbnail( { video } )
       await dispatch(updateStars({ id: video.id, star: rating }));
       console.log("Estrellas del video actualizadas correctamente");
       setShowRating( false );
+      await dispatch(removeVideo({id: video.id}));
     } catch ( error )
     {
       console.error("Error actualizando las estrellas del video:", error);

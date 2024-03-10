@@ -4,6 +4,8 @@ import { useDispatch, useSelector } from 'react-redux'
 import { logout, reset } from '../features/auth/authSlice'
 import { toast } from 'react-hot-toast'
 import NotificationBell from './notification'
+import { IoIosLogOut } from "react-icons/io";
+
 
 const Nav = () => {
 
@@ -38,7 +40,7 @@ const Nav = () => {
                             </div>
                             <div className="flex items-center">
                                 {(userState && logoutState) ? 
-                                    <button onClick={handleLogout} className="px-3 py-2 text-white hover:bg-gray-700 rounded-md">Salir</button>
+                                   <IoIosLogOut onClick={handleLogout} />
                                     :
                                     null 
                                 }

@@ -7,6 +7,8 @@ interface NotificationState {
     notificationIsLoading: boolean;
     notificationMessage: string | false;
     notificationCount: number;
+    notificationsInformation: string[];
+
 }
 
 const initialState: NotificationState = {
@@ -15,12 +17,22 @@ const initialState: NotificationState = {
     notificationIsSuccess: false,
     notificationIsLoading: false,
     notificationMessage: '',
-    notificationCount: 0
+    notificationCount: 0,
+    notificationsInformation: [],
+
 };
 
 export const updateNotificationCount = (count: number) => (dispatch: any) => {
     "notifications/updateNotificationCount"
     dispatch(notificationSlice.actions.setNotificationCount(count));
+};
+
+export const addNotification = (notification: string) => (dispatch: any) => {
+    dispatch(notificationSlice.actions.addNotification(notification));
+};
+
+export const clearNotifications = () => (dispatch: any) => {
+    dispatch(notificationSlice.actions.clearNotifications());
 };
 
 export const notificationSlice = createSlice({
@@ -35,6 +47,14 @@ export const notificationSlice = createSlice({
         },
         setNotificationCount: (state, action: PayloadAction<number>) => {
             state.notificationCount = action.payload;
+        },
+        addNotification: (state, action: PayloadAction<string>) => {
+            state.notificationsInformation.push(action.payload);
+            state.notificationCount += 1;
+        },
+        clearNotifications: (state) => {
+            state.notificationsInformation = [];
+            state.notificationCount = 0;
         },
     },
     extraReducers: (builder) => {

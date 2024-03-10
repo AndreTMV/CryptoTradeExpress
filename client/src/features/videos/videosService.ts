@@ -16,6 +16,7 @@ const DELETE_SECTION = `${BACKEND_DOMAIN}/videos/api/v1/sections/`
 const ACCEPT_VIDEO = `${BACKEND_DOMAIN}/videos/api/v1/acceptVideo/`
 const NO_ACCEPTED_VIDEOS = `${BACKEND_DOMAIN}/videos/api/v1/noAcceptedVideos/`
 const DELETE_VIDEO = `${BACKEND_DOMAIN}/videos/api/v1/videos/`
+const DECLINE_VIDEO = `${BACKEND_DOMAIN}/videos/api/v1/declineVideo/`
 
 const uploadVideo = async ( videoData: any ) =>
 {
@@ -158,7 +159,18 @@ const deleteVideo = async (videoId: number) => {
     return response.data;
 }
 
-const videosService = { uploadVideo, getAllVideos, getVideo, getAllSections, getSectionVideos, checkVideo, checkEliminatedVideo, updateStars, updateViews, mediaStars, uploadSection, deleteSection, updateStatus, getNoAcceptedVideos, deleteVideo }
+const removeVideo = async ( videoData: any ) =>
+{
+    const config = {
+        headers: {
+            "Content-Type": "application/json"
+        }
+    }
+    const response = await axios.put(DECLINE_VIDEO, videoData, config)
+    return response.data
+}
+
+const videosService = { uploadVideo, getAllVideos, getVideo, getAllSections, getSectionVideos, checkVideo, checkEliminatedVideo, updateStars, updateViews, mediaStars, uploadSection, deleteSection, updateStatus, getNoAcceptedVideos, deleteVideo, removeVideo }
 
 export default videosService 
 

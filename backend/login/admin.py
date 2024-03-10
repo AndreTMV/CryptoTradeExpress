@@ -12,7 +12,7 @@ class UserAdmin(BaseUserAdmin):
     add_form = CustomUserCreationForm
     form = CustomUserChangeForm
     model = User
-    list_display = ["email", "username", "is_staff", "is_active"]
+    list_display = ["id","email", "username", "is_staff", "is_active"]
     list_display_links = ["email"]
     list_filter = ["email", "username", "is_staff", "is_active"]
     search_fields = ["email", "username"]

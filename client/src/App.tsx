@@ -16,7 +16,9 @@ import VideosSectionPage from './pages/videos/videosSection';
 import { UploadSection } from './pages/videos/uploadSection';
 import { DeleteSection } from './pages/videos/deleteSection';
 import  NotAcceptedVideosPage from './pages/videos/noAcceptedVideos';
-
+import { CreatePerfilPage } from './pages/perfil/createPerfilForm';
+import { CreateQuizPage } from './pages/quiz/createQuizForm';
+import { AddQuestionsPage } from './pages/quiz/addQuestionsForm';
 function App()
 {
   return (
@@ -38,6 +40,9 @@ function App()
           <Route path='/uploadSection' element={<UploadSection/>}/>
           <Route path='/deleteSection' element={<DeleteSection/>}/>
           <Route path='/notAcceptedVideos' element={<NotAcceptedVideosPage/>}/>
+          <Route path='/perfilPage' element={<CreatePerfilPage/>}/>
+          <Route path='/createQuiz' element={<CreateQuizPage/>}/>
+          <Route path='/addQuestions' element={<AddQuestionsPage/>}/>
           <Route path='*' element={<NotFoundPage/>}></Route>
         </Routes>
         <Toaster/>

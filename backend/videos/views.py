@@ -69,6 +69,21 @@ def video_status(request):
         return Response({'status': 'error', 'message': 'Debes proporcionar un video valido'}, status=400)
 
 @api_view(['PUT'])
+def video_remove(request):
+    video_id = request.data.get('id')
+    video = Video.objects.get(id=video_id)
+    if video:
+        if video.views == 50 and ((video.stars / video.views) <= 7):
+            try:
+                video.accepted = False 
+                video.save()
+                return Response({'status': 'success', 'message': 'Video Aceptado'}, status=200)
+            except Exception as e:
+                return Response({'error': str(e)}, status=500)
+    else:
+        return Response({'status': 'error', 'message': 'Debes proporcionar un video valido'}, status=400)
+
+@api_view(['PUT'])
 def update_stars(request):
     video_id = request.data.get('id')
     star_amount = request.data.get('star')

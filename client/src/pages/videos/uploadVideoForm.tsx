@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { toast } from "react-hot-toast";
 import { useDispatch, useSelector } from "react-redux";
 import { reset,uploadVideo, getAllSections, checkEliminatedVideo, checkVideo } from "../../features/videos/videosSlice"
-import { updateNotificationCount } from "../../features/notificationSlice";
+import { updateNotificationCount, addNotification } from "../../features/notificationSlice";
 
 export function UploadVideoPage() {
   const [values, setValues] = React.useState({
@@ -16,7 +16,7 @@ export function UploadVideoPage() {
   const [sections, setSections] = React.useState([])
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { videoIsError, videoIsSuccess, videoIsLoading, videoMessage, allLoaded } = useSelector((state) => state.videos);
+  const { videoIsError, videoIsSuccess, videoIsLoading, videoMessage, allLoaded, video } = useSelector((state) => state.videos);
   const {userInfo} = useSelector((state) => state.auth)
   const {notificationCount} = useSelector((state) => state.notifications)
   const username = userInfo.id
@@ -63,8 +63,9 @@ export function UploadVideoPage() {
     }
 
     if (videoIsSuccess) {
-        navigate("/dashboard")
         toast.success("Se ha subido el video correctamente, se notificará al moderador")
+        navigate("/createQuiz", { state: { videoId: video.id } });
+        console.log(video.id)
     }
     dispatch(reset())
   }, [ videoIsError, videoIsSuccess, videoIsLoading, videoMessage, navigate, dispatch])
@@ -79,7 +80,7 @@ export function UploadVideoPage() {
         toast.error("Este video ya ha sido subido");
       } else {
         dispatch(uploadVideo( videoData))
-        dispatch(updateNotificationCount(notificationCount + 1));
+        dispatch(addNotification("Se ha subido un nuevo video"));
       }
     }
 
