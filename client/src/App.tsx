@@ -1,5 +1,6 @@
 import {BrowserRouter, Routes, Route} from 'react-router-dom'
 import {Navigation} from './components/Navigation'
+import QuizResult from './components/answerQuiz'
 import {LoginPage} from './pages/login/loginPage'
 import { CreateUserPage } from './pages/login/createUserPage';
 import Dashboard from './pages/DashBoard';
@@ -19,6 +20,10 @@ import  NotAcceptedVideosPage from './pages/videos/noAcceptedVideos';
 import { CreatePerfilPage } from './pages/perfil/createPerfilForm';
 import { CreateQuizPage } from './pages/quiz/createQuizForm';
 import { AddQuestionsPage } from './pages/quiz/addQuestionsForm';
+import  RenderQuizPage  from './pages/quiz/renderQuizPage';
+import  QuizThumbnails  from './pages/quiz/renderAllQuizes';
+import  RenderAnswerQuizPage  from './pages/quiz/renderAnswerQuizPage';
+
 function App()
 {
   return (
@@ -43,6 +48,9 @@ function App()
           <Route path='/perfilPage' element={<CreatePerfilPage/>}/>
           <Route path='/createQuiz' element={<CreateQuizPage/>}/>
           <Route path='/addQuestions' element={<AddQuestionsPage/>}/>
+          <Route path='/renderQuiz' element={<RenderQuizPage/>}/>
+          <Route path='/allQuizzes' element={<QuizThumbnails/>}/>
+          <Route path='/answerQuiz' element={<RenderAnswerQuizPage/>}/>
           <Route path='*' element={<NotFoundPage/>}></Route>
         </Routes>
         <Toaster/>

@@ -36,7 +36,7 @@ export function LoginPage() {
       toast.error("El email o contraseña son incorrectas");
     }
 
-    if (isSuccess || userState) {
+    if (isSuccess || userState && !isError) {
       dispatch(sendOTP({ email, password }));
       toast.success("Se ha enviado el otp a tu correo.");
       navigate('/OTP-verification', {
@@ -45,7 +45,7 @@ export function LoginPage() {
     }
 
     dispatch(reset());
-  }, [isError, isSuccess, navigate, dispatch]);
+  }, [isError, isSuccess]);
 
   return (
     <div className="flex items-center justify-center h-screen">

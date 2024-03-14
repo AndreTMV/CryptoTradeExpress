@@ -9,6 +9,7 @@ interface QuizState {
     quizIsSuccess: boolean;
     quizIsLoading: boolean;
     quizMessage: string;
+    allQuizzesLoaded: boolean;
 }
 
 const initialState: QuizState = {
@@ -65,6 +66,97 @@ export const createAnswer = createAsyncThunk(
         }
     }
 )
+
+export const updateNumberQuestions = createAsyncThunk(
+    "quiz/updateNumberQuestions",
+    async ( quizData: any, thunkAPI ) =>
+    {
+        try
+        {
+            return await quizService.updateNumberQuestions(quizData)
+        } catch ( error )
+        {
+            const message = (error.response && error.response.data
+                && error.response.data.message) ||
+                error.message || error.toString()
+
+            return thunkAPI.rejectWithValue(message)
+        }
+    }
+)
+
+export const renderQuiz = createAsyncThunk(
+    "quiz/renderQuiz",
+    async ( quizData: any, thunkAPI ) =>
+    {
+        try
+        {
+            return await quizService.renderQuiz(quizData)
+        } catch ( error )
+        {
+            const message = (error.response && error.response.data
+                && error.response.data.message) ||
+                error.message || error.toString()
+
+            return thunkAPI.rejectWithValue(message)
+        }
+    }
+)
+
+export const getQuiz = createAsyncThunk(
+    "quiz/getQuiz",
+    async ( videoData: any, thunkAPI ) =>
+    {
+        try
+        {
+            return await quizService.getQuiz(videoData)
+        } catch ( error )
+        {
+            const message = (error.response && error.response.data
+                && error.response.data.message) ||
+                error.message || error.toString()
+
+            return thunkAPI.rejectWithValue(message)
+        }
+    }
+)
+
+export const updateQuizStatus = createAsyncThunk(
+    "quiz/updateQuizStatus",
+    async ( quizData: any, thunkAPI ) =>
+    {
+        try
+        {
+            return await quizService.updateQuizStatus(quizData)
+        } catch ( error )
+        {
+            const message = (error.response && error.response.data
+                && error.response.data.message) ||
+                error.message || error.toString()
+
+            return thunkAPI.rejectWithValue(message)
+        }
+    }
+)
+
+export const getAllQuizzes = createAsyncThunk(
+    "quiz/getQuizzes",
+    async ( thunkAPI ) =>
+    {
+        try
+        {
+            return await quizService.getAllQuizzes()
+        } catch ( error )
+        {
+            const message = (error.response && error.response.data
+                && error.response.data.message) ||
+                error.message || error.toString()
+
+            return thunkAPI.rejectWithValue(message)
+        }
+    }
+)
+
 
 export const quizSlice = createSlice({
     name: "quiz",
@@ -128,6 +220,79 @@ export const quizSlice = createSlice({
                 state.quizIsError = true,
                 state.quizIsLoading = false,
                 state.quizIsSuccess = false,
+                state.quizMessage = action.payload
+            })
+            .addCase(updateNumberQuestions.pending, (state) => {
+                state.quizIsLoading = true
+            })
+            .addCase(updateNumberQuestions.fulfilled, (state) => {
+                state.quizIsLoading = false
+                state.quizIsSuccess = true
+            })
+            .addCase(updateNumberQuestions.rejected, (state, action) => {
+                state.quizIsLoading = false
+                state.quizIsSuccess = false
+                state.quizIsError = true
+                state.quizMessage = action.payload
+            })
+            .addCase( renderQuiz.pending, ( state ) =>
+            {
+                state.quizIsLoading = true
+            })
+            .addCase( renderQuiz.fulfilled, ( state, action ) =>
+            {
+                state.quizIsSuccess = true,
+                state.quizIsLoading = false
+                state.quiz = action.payload
+            })
+            .addCase( renderQuiz.rejected, ( state, action) =>
+            {
+                state.quizIsError = true,
+                state.quizIsLoading = false,
+                state.quizIsSuccess = false,
+                state.quizMessage = action.payload
+            })
+            .addCase( getQuiz.pending, ( state ) =>
+            {
+                state.quizIsLoading = true
+            })
+            .addCase( getQuiz.fulfilled, ( state, action ) =>
+            {
+                state.quizIsSuccess = true,
+                state.quizIsLoading = false
+            })
+            .addCase( getQuiz.rejected, ( state, action) =>
+            {
+                state.quizIsError = true,
+                state.quizIsLoading = false,
+                state.quizIsSuccess = false,
+                state.quizMessage = action.payload
+            })
+            .addCase(updateQuizStatus.pending, (state) => {
+                state.quizIsLoading = true
+            })
+            .addCase(updateQuizStatus.fulfilled, (state) => {
+                state.quizIsLoading = false
+                state.quizIsSuccess = true
+            })
+            .addCase(updateQuizStatus.rejected, (state, action) => {
+                state.quizIsLoading = false
+                state.quizIsSuccess = false
+                state.quizIsError = true
+                state.quizMessage = action.payload
+            })
+            .addCase(getAllQuizzes.pending, (state) => {
+                state.quizIsLoading = true
+            })
+            .addCase(getAllQuizzes.fulfilled, (state, action) => {
+                state.quizIsLoading = false
+                state.allQuizzesLoaded = true
+                state.quiz = action.payload
+            })
+            .addCase(getAllQuizzes.rejected, (state, action) => {
+                state.quizIsLoading = false
+                state.allQuizzesLoaded = false
+                state.quizIsError = true
                 state.quizMessage = action.payload
             })
     }

@@ -4,14 +4,18 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import { toast } from "react-hot-toast";
 import { useDispatch, useSelector } from 'react-redux'
  import { RootState } from '../../app/store'; 
+import { updateNumberQuestions, reset } from '../../features/quiz/quizSlice'
+import { updateNotificationCount, addNotification } from "../../features/notificationSlice";
 
 export function AddQuestionsPage() {
   const navigate = useNavigate()
+  const dispatch = useDispatch()
   const { quizIsError, quizIsSuccess, quizIsLoading, quizMessage, quiz } = useSelector((state: RootState) => state.quiz);
   const [questions, setQuestions] = useState([{ id: 1, type: "true_false" }]); 
+  const [selectedType, setSelectedType] = useState( "true_false" );
+  const [saveQuestion, setSaveQuestion] = useState(false); 
+  const {notificationCount} = useSelector((state: RootState) => state.notifications)
 
-
-  const [selectedType, setSelectedType] = useState( "trueFalse" );
   const addQuestion = () => {
   const newQuestionId = questions.length + 1;
     setQuestions([...questions, { id: newQuestionId, type: selectedType }]);
@@ -26,12 +30,27 @@ export function AddQuestionsPage() {
     setQuestions(updatedQuestions);
   };
 
+  const handleFinishQuiz = () => {
+    if (questions.length === 0) {
+      toast.error("Debes agregar al menos una pregunta antes de guardar el quiz.");
+    } else {
+      setSaveQuestion(true);
+    }
+  };
+
 
   useEffect(() => {
     if (quizIsSuccess) {
-      toast.success("Quiz guardado exitosamente");
+      const quizData = {
+        id: quiz.id,
+        questions: questions.length
+      }
+      dispatch(updateNumberQuestions(quizData));
+      dispatch(addNotification("Se ha subido un nuevo cuestionario"));
+      toast.success("Se ha subido el video y el cuestionario correctamente, se notificará al moderador")
       navigate("/dashboard");
     }
+    dispatch(reset())
   }, [quizIsSuccess]);
 
 
@@ -48,6 +67,7 @@ export function AddQuestionsPage() {
             type={question.type}
             onDelete={() => removeQuestion( question.id )}
             quizId={quiz.id}
+            saveQuestion={saveQuestion}
           />
         </div>
       ))}
@@ -73,6 +93,7 @@ export function AddQuestionsPage() {
         </button>
         <button
           className="bg-blue-500 text-white px-2 py-1 rounded"
+          onClick={handleFinishQuiz}
         >
          Terminar Quiz 
         </button>

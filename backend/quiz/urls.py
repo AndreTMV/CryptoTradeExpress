@@ -11,4 +11,8 @@ router.register(r'results', views.ResultView, 'results')
 urlpatterns = [
     path("api/v1/", include(router.urls)),
     path('docs/Quiz/', include_docs_urls(title="Quiz Api")),
+    path("api/v1/increaseQuestions/", views.increase_quiz_question),
+    path("api/v1/renderQuiz/", views.render_quiz),
+    path("api/v1/getQuiz/", views.get_quiz_video),
+    path("api/v1/quizStatus/", views.accept_quiz),
 ]

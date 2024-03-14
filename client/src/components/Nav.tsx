@@ -22,7 +22,7 @@ const Nav = () => {
     }
 
     return (
-            <nav className="bg-indigo-800 shadow-lg">
+            <nav className="bg-indigo-800 shadow-lg mb-2">
                 <div className="max-w-full mx-auto px-4">
                     <div className="flex justify-between h-16">
                         <div className="flex">

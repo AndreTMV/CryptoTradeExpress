@@ -63,7 +63,7 @@ export function UploadVideoPage() {
     }
 
     if (videoIsSuccess) {
-        toast.success("Se ha subido el video correctamente, se notificará al moderador")
+
         navigate("/createQuiz", { state: { videoId: video.id } });
         console.log(video.id)
     }

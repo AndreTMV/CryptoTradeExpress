@@ -1,5 +1,5 @@
-import React, { useState, useRef, forwardRef, useImperativeHandle } from "react";
-import { reset ,createAnswer, createQuestion } from '../features/quiz/quizSlice'
+import React, { useState, useEffect } from "react";
+import { reset ,createAnswer, createQuestion, updateNumberQuestions } from '../features/quiz/quizSlice'
 import { useDispatch, useSelector } from "react-redux";
 import { RootState } from '../app/store'; 
 
@@ -7,16 +7,18 @@ interface QuestionProps {
   type: string;
   onDelete: () => void;
   quizId: number;
+  saveQuestion: boolean
 }
 
 
-const Question: React.FC<QuestionProps> = ({ type, onDelete, quizId }) => {
+const Question: React.FC<QuestionProps> = ({ type, onDelete, quizId, saveQuestion }) => {
   const [questionText, setQuestion] = useState("")
   const [options, setOptions] = useState([""]);
   const [correctAnswers, setCorrectAnswers] = useState<boolean[]>([]);
   const [answerText, setAnswerText] = useState("")
   const dispatch = useDispatch();
   const { quizIsError, quizIsSuccess, quizIsLoading, quizMessage, quiz, question, answer } = useSelector((state: RootState) => state.quiz);
+
 
   const addOption = () => {
     setOptions([...options, ""]);
@@ -56,44 +58,93 @@ const Question: React.FC<QuestionProps> = ({ type, onDelete, quizId }) => {
     const newCorrectAnswers = [value === "true", value === "false"];
     setCorrectAnswers(newCorrectAnswers);
   };
+const handleSaveQuestion = () => {
+  if (questionText.trim() === "") {
+    throw new Error("La pregunta no puede estar en blanco.");
+  }
+  const questionData = {
+    quiz: quizId,
+    question_type: type,
+    text: questionText
+  };
 
-
-  const handleSaveQuestion = async () => {
-    try {
-      if (questionText.trim() === "") {
-        throw new Error("La pregunta no puede estar en blanco.");
-      }
-      const questionData = {
-        quiz: quizId,
-        question_type: type,
-        text:questionText
-      }
-      await dispatch(createQuestion(questionData));
-      console.log(question.id)
+  // Crear la pregunta y manejarla con .then()
+  dispatch(createQuestion(questionData))
+    .then((createdQuestion) => {
       if (type === "true_false" || type === "multiple_choice") {
         const answersData = options.map((option, index) => ({
-          question: question.id,
+          question: createdQuestion.payload.id,
           text: option,
           correct: correctAnswers[index]
         }));
-
-        await Promise.all(answersData.map(answer => dispatch(createAnswer(answer))));
+        // Crear todas las respuestas y manejarlas con .then()
+        Promise.all(answersData.map(answer => dispatch(createAnswer(answer))))
+          .then(() => {
+            console.log("Todas las respuestas fueron creadas.");
+          })
+          .catch(error => {
+            console.error("Error al crear las respuestas:", error);
+          });
       } else if (type === "fill_in_the_blank") {
         if (answerText.trim() === "") {
           throw new Error("La respuesta no puede estar en blanco.");
         }
         const answerData = {
-          question: question.id,
+          question: createdQuestion.payload.id,
           text: answerText,
-          correct: true 
+          correct: true
         };
-        console.log(question.id);
-        await dispatch(createAnswer(answerData));
+        // Crear la respuesta y manejarla con .then()
+        dispatch(createAnswer(answerData))
+          .then(() => {
+            console.log("La respuesta fue creada.");
+          })
+          .catch(error => {
+            console.error("Error al crear la respuesta:", error);
+          });
       }
-    } catch (error) {
+    })
+    .catch(error => {
       console.error("Error al guardar la pregunta:", error);
-    }
-  };
+    });
+};
+
+
+  // const handleSaveQuestion = async () => {
+  //   try {
+  //     if (questionText.trim() === "") {
+  //       throw new Error("La pregunta no puede estar en blanco.");
+  //     }
+  //     const questionData = {
+  //       quiz: quizId,
+  //       question_type: type,
+  //       text:questionText
+  //     }
+  //     dispatch( createQuestion( questionData ) )
+  //     if (type === "true_false" || type === "multiple_choice") {
+  //       const answersData = options.map((option, index) => ({
+  //         question: question.id,
+  //         text: option,
+  //         correct: correctAnswers[index]
+  //       }));
+  //       console.log(question.id)
+  //       Promise.all(answersData.map(answer => dispatch(createAnswer(answer))));
+  //     } else if (type === "fill_in_the_blank") {
+  //       if (answerText.trim() === "") {
+  //         throw new Error("La respuesta no puede estar en blanco.");
+  //       }
+  //       const answerData = {
+  //         question: question.id,
+  //         text: answerText,
+  //         correct: true 
+  //       };
+  //       console.log(question.id)
+  //       dispatch(createAnswer(answerData));
+  //     }
+  //   } catch (error) {
+  //     console.error("Error al guardar la pregunta:", error);
+  //   }
+  // };
 
   React.useEffect(() => {
     if ( quizIsError )
@@ -107,6 +158,16 @@ const Question: React.FC<QuestionProps> = ({ type, onDelete, quizId }) => {
   
 
   }, [quizIsError, quizIsLoading, quizIsSuccess, quiz, answer, question, dispatch])
+  
+  useEffect(() => {
+    if ( saveQuestion )
+    {
+      handleSaveQuestion()
+    } else
+    {
+      console.log(quizMessage)
+    }
+  }, [saveQuestion])
   
 
   return (
@@ -177,12 +238,6 @@ const Question: React.FC<QuestionProps> = ({ type, onDelete, quizId }) => {
         <button onClick={onDelete} className="text-red-500 p-1 rounded-full hover:bg-gray-200 focus:outline-none">
         X
         </button>
-        <button
-        onClick={handleSaveQuestion}
-        className="bg-green-500 text-white px-2 py-1 rounded ml-2 hover:bg-green-600 focus:outline-none"
-        >
-        Guardar Pregunta
-      </button>
     </div>
   );
 };

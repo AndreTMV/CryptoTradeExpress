@@ -29,7 +29,7 @@ export function CreateQuizPage() {
         title: values.title,
         video: videoId,
         status:"pendiente",
-        number_of_question: 1,
+        number_of_question: 0,
         attempts: 0,
     }
     dispatch(createQuiz(quizData))
