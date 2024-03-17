@@ -107,44 +107,7 @@ const handleSaveQuestion = () => {
     .catch(error => {
       console.error("Error al guardar la pregunta:", error);
     });
-};
-
-
-  // const handleSaveQuestion = async () => {
-  //   try {
-  //     if (questionText.trim() === "") {
-  //       throw new Error("La pregunta no puede estar en blanco.");
-  //     }
-  //     const questionData = {
-  //       quiz: quizId,
-  //       question_type: type,
-  //       text:questionText
-  //     }
-  //     dispatch( createQuestion( questionData ) )
-  //     if (type === "true_false" || type === "multiple_choice") {
-  //       const answersData = options.map((option, index) => ({
-  //         question: question.id,
-  //         text: option,
-  //         correct: correctAnswers[index]
-  //       }));
-  //       console.log(question.id)
-  //       Promise.all(answersData.map(answer => dispatch(createAnswer(answer))));
-  //     } else if (type === "fill_in_the_blank") {
-  //       if (answerText.trim() === "") {
-  //         throw new Error("La respuesta no puede estar en blanco.");
-  //       }
-  //       const answerData = {
-  //         question: question.id,
-  //         text: answerText,
-  //         correct: true 
-  //       };
-  //       console.log(question.id)
-  //       dispatch(createAnswer(answerData));
-  //     }
-  //   } catch (error) {
-  //     console.error("Error al guardar la pregunta:", error);
-  //   }
-  // };
+  };
 
   React.useEffect(() => {
     if ( quizIsError )

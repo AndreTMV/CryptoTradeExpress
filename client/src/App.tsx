@@ -23,6 +23,8 @@ import { AddQuestionsPage } from './pages/quiz/addQuestionsForm';
 import  RenderQuizPage  from './pages/quiz/renderQuizPage';
 import  QuizThumbnails  from './pages/quiz/renderAllQuizes';
 import  RenderAnswerQuizPage  from './pages/quiz/renderAnswerQuizPage';
+import  ReportThumbnails  from './pages/quiz/renderReport';
+import { UpdateQuestionsPage } from './pages/quiz/updateQuestionsForm';
 
 function App()
 {
@@ -51,6 +53,8 @@ function App()
           <Route path='/renderQuiz' element={<RenderQuizPage/>}/>
           <Route path='/allQuizzes' element={<QuizThumbnails/>}/>
           <Route path='/answerQuiz' element={<RenderAnswerQuizPage/>}/>
+          <Route path='/renderReports' element={<ReportThumbnails/>}/>
+          <Route path='/updateQuestions' element={<UpdateQuestionsPage/>}/>
           <Route path='*' element={<NotFoundPage/>}></Route>
         </Routes>
         <Toaster/>

@@ -56,7 +56,7 @@ export function CreateQuizPage() {
     }
 
     dispatch(reset());
-  }, [quizIsError, quizIsSuccess, quizIsLoading, navigate, dispatch]);
+  }, [quizIsError, quizIsSuccess, quizIsLoading]);
 
   return (
     <div className="flex items-center justify-center h-screen">

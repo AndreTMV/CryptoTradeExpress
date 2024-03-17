@@ -19,11 +19,6 @@ function RenderQuizPage() {
   const [status, setStatus] = useState( "" );
   const [showRejectionForm, setShowRejectionForm] = useState(false);
   const { quizIsError, quizIsSuccess, quizIsLoading, quizMessage } = useSelector((state: RootState) => state.quiz);
-  const handleRejection = (data) => {
-    // Aquí podrías enviar los datos del formulario a tu servidor o manejarlos de alguna otra manera.
-    console.log('Datos del reporte rechazado:', data);
-    setShowRejectionForm(false); // Ocultar el formulario después de enviarlo
-  };
 
   useEffect(() => {
     const fetchData = async () => {
@@ -44,17 +39,15 @@ function RenderQuizPage() {
       // Cleanup if necessary
     };
   }, [id]);
-
-
-  // useEffect(() => {
-  //   if (quizIsError) {
-  //     toast.error("Ha ocurrido un error");
-  //   } else if (quizIsSuccess && !quizIsLoading) {
-  //       toast.success("Se ha cambiado el status del quiz");
-  //       navigate("/notAcceptedVideos");
-  //     dispatch(reset());
-  //   }
-  // }, [quizIsError, quizIsSuccess, quizIsLoading, quizMessage, navigate, dispatch]);
+  useEffect(() => {
+    if (quizIsError) {
+      toast.error("Ha ocurrido un error");
+    } else if (quizIsSuccess && !quizIsLoading) {
+        toast.success("Se ha cambiado el status del quiz");
+        navigate("/notAcceptedVideos");
+      dispatch(reset());
+    }
+  }, [quizIsError, quizIsSuccess, quizIsLoading, quizMessage, navigate, dispatch]);
 
   return (
     <div className="w-full">
@@ -71,11 +64,10 @@ function RenderQuizPage() {
         onClick={() =>
         {
           setShowRejectionForm(true)
-          dispatch( updateQuizStatus( { state: "rechazado", id: id } ) )
         }}>
       Rechazar
       </button>
-      {showRejectionForm && <RejectionForm onSubmit={handleRejection} />}
+      {showRejectionForm && <RejectionForm  id={id} />}
       <button className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded ml-4">
         <Link to="/notAcceptedVideos">Regresar</Link>
       </button>

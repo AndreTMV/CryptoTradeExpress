@@ -111,3 +111,5 @@ def user_is_staff(request):
 
     return Response({'error': 'Debes proporcionar un usuario en los parámetros de consulta.'}, status=400)
 
+
+

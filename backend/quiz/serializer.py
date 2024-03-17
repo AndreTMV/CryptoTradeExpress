@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Quiz, Question, Answer, Result
+from .models import Quiz, Question, Answer, Result, Report
 
 class QuizSerializer(serializers.ModelSerializer):
     class Meta:
@@ -19,4 +19,9 @@ class AnswerSerializer(serializers.ModelSerializer):
 class ResultSerializer(serializers.ModelSerializer):
     class Meta:
         model = Result
+        fields = '__all__'
+
+class ReportSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Report
         fields = '__all__'

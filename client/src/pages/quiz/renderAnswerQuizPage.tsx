@@ -39,15 +39,7 @@ function RenderAnswerQuizPage() {
   }, [id]);
 
 
-  useEffect(() => {
-    if (quizIsError) {
-      toast.error("Ha ocurrido un error");
-    } else if (quizIsSuccess && !quizIsLoading) {
-        toast.success("Se ha cambiado el status del quiz");
-        navigate("/notAcceptedVideos");
-      dispatch(reset());
-    }
-  }, [quizIsError, quizIsSuccess, quizIsLoading, quizMessage, navigate, dispatch]);
+
 
   return (
     <div className="w-full">

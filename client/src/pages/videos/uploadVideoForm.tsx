@@ -63,7 +63,6 @@ export function UploadVideoPage() {
     }
 
     if (videoIsSuccess) {
-
         navigate("/createQuiz", { state: { videoId: video.id } });
         console.log(video.id)
     }

@@ -18,6 +18,7 @@ const Nav = () => {
     const handleLogout = () => {
         dispatch(logout())
         dispatch(reset())
+        localStorage.removeItem('popupShown');
         navigate("/")
     }
 

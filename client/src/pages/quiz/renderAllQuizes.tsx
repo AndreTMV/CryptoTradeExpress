@@ -25,10 +25,16 @@ function QuizThumbnails() {
     }
   }
 
-  useEffect(() => {
+  // useEffect(() => {
+  //   if ( !allQuizzesLoaded )
+  //   {
+  //   fetchQuizzes();
+  //   }
+  //   dispatch(reset());
+  // }, [quizIsError, quizIsLoading, quizMessage, allQuizzesLoaded, dispatch]);
+useEffect(() => {
     fetchQuizzes();
-    dispatch(reset());
-  }, [quizIsError, quizIsLoading, quizMessage, allQuizzesLoaded, dispatch]);
+}, [allQuizzesLoaded, dispatch]);
 
   return (
     <div className="video-thumbnails grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
@@ -36,6 +42,9 @@ function QuizThumbnails() {
         map( ( quiz ) => (
         <QuizButton key={quiz.id} quiz={quiz} />
       ))}
+      <button className="btn bg-indigo-500 text-white px-4 py-2 rounded-md mt-4 hover:bg-indigo-700" onClick={() => navigate("/renderReports")}>
+        Quizzes Pendientes
+      </button>
     </div>
   );
 }
@@ -55,6 +64,7 @@ return (
       <button className="btn bg-indigo-500 text-white px-4 py-2 rounded-md mt-4 hover:bg-indigo-700" onClick={handleClick}>
         Realizar Quiz
       </button>
+
     </div>
      );
 }

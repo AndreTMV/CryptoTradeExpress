@@ -1,13 +1,41 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { reset ,createReport } from '../features/quiz/quizSlice'
+import { useDispatch, useSelector } from "react-redux";
+import { RootState } from '../app/store'; 
+import {toast} from 'react-hot-toast'
 
-const RejectionForm = ({ onSubmit }) => {
+const RejectionForm:React.FC<{ id:number}> = ({ id }, ) => {
   const [title, setTitle] = useState('');
-  const [reason, setReason] = useState('');
+  const [description, setDescription] = useState('');
+  const dispatch = useDispatch()
+  const navigate = useNavigate()
+  const { quizIsError, quizIsSuccess, quizIsLoading, quizMessage, report } = useSelector((state: RootState) => state.quiz);
 
   const handleSubmit = (event) => {
     event.preventDefault();
-    onSubmit({ title, reason });
+    const reportData = {
+      quiz:id,
+      title,
+      description
+    }
+    dispatch(createReport(reportData))
   };
+
+  useEffect(() => {
+    if ( quizIsError ) { 
+      toast.error("Ha ocurrido un error, intentelo de nuevo")
+    }
+    if ( quizIsSuccess)
+    {
+      navigate('/notAcceptedVideos')
+      toast.success("Se le notificara al usuario");
+
+    }
+    return () => dispatch(reset())
+  }, [quizIsError, quizIsSuccess ])
+  
+
 
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-gray-500 bg-opacity-50 z-50">
@@ -34,8 +62,8 @@ const RejectionForm = ({ onSubmit }) => {
               className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
               id="reason"
               placeholder="Escriba aquí la razón del rechazo"
-              value={reason}
-              onChange={(e) => setReason(e.target.value)}
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
             />
           </div>
           <div className="flex items-center justify-between">

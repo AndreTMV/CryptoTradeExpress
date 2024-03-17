@@ -48,6 +48,8 @@ INSTALLED_APPS = [
     "djoser",
     "rest_framework_simplejwt",
     'coreapi',
+    'celery',
+    'django_celery_beat',
     # Internal Apps
     'login',
     'perfil',
@@ -231,5 +233,15 @@ LOGGING = {
             'level': 'DEBUG',
             'propagate': False,
         },
+    },
+}
+
+CELERY_TIMEZONE = "America/Mexico_City"
+CELERY_TASK_TRACK_STARTED = True
+CELERY_TASK_TIME_LIMIT = 30 * 60
+CELERY_BEAT_SCHEDULE = {
+    'auto-reject-quiz-task': {
+        'task': 'tu_app.tasks.auto_reject_quiz',
+        'schedule': timedelta(hours=24),  # Ejecutar cada 24 horas
     },
 }
