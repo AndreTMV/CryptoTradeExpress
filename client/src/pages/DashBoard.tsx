@@ -64,7 +64,7 @@ const Dashboard = () => {
                 <button className="btn text-white bg-indigo-300 rounded-md">Alertas de precios</button>
                 <button className="btn text-white bg-indigo-300 rounded-md">Predicciones</button>
                 <button className="btn text-white bg-indigo-300 rounded-md">Noticias</button>
-                <button className="btn text-white bg-indigo-300 rounded-md">Chat</button>
+                <button className="btn text-white bg-indigo-300 rounded-md"><Link to="/inbox">Chat</Link></button>
                 <button className="btn text-white bg-indigo-300 rounded-md"><Link to="/perfilPage">Perfil</Link></button>
                 <button className="btn text-white bg-indigo-300 rounded-md">Amigos</button>
                 <button className="btn text-white bg-indigo-300 rounded-md"><Link to="/sectionsPage">Video</Link></button>

@@ -2,6 +2,7 @@ from django.db import models
 from login.models import User
 from django.contrib.postgres.fields import ArrayField
 
+
 # Create your models here.
 class Perfil(models.Model):
     username = models.ForeignKey(User,on_delete=models.CASCADE)

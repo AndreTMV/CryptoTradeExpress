@@ -25,7 +25,9 @@ import  QuizThumbnails  from './pages/quiz/renderAllQuizes';
 import  RenderAnswerQuizPage  from './pages/quiz/renderAnswerQuizPage';
 import  ReportThumbnails  from './pages/quiz/renderReport';
 import { UpdateQuestionsPage } from './pages/quiz/updateQuestionsForm';
-
+import Message from './pages/chat/message'
+import MessageDetail from './pages/chat/messageDetail'
+import SearchUsers from './pages/chat/searchUsers'
 function App()
 {
   return (
@@ -55,6 +57,9 @@ function App()
           <Route path='/answerQuiz' element={<RenderAnswerQuizPage/>}/>
           <Route path='/renderReports' element={<ReportThumbnails/>}/>
           <Route path='/updateQuestions' element={<UpdateQuestionsPage/>}/>
+          <Route path='/inbox' element={<Message/>}></Route>
+          <Route path='/inbox/:id' element={<MessageDetail/>}></Route>
+          <Route path='/search/:username' element={<SearchUsers/>}></Route>
           <Route path='*' element={<NotFoundPage/>}></Route>
         </Routes>
         <Toaster/>
