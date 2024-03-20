@@ -257,3 +257,4 @@ CHANNEL_LAYERS = {
         },
     },
 }
+TIME_ZONE = "America/Mexico_City"

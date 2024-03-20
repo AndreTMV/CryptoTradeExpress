@@ -117,7 +117,7 @@ const formatDate = (date: string) => {
                   <div className="flex items-center">
                     <input
                       type="text"
-                      className="form-input flex-grow px-4 py-2 rounded-md bg-gray-100 focus:outline-none focus:bg-white"
+                      className="form-input flex-grow px-4 py-2 rounded-md bg-gray-100 focus:outline-none focus:bg-white text-gray-900"
                       placeholder="Type your message"
                       name="message"
                       value={newMessage.message}
