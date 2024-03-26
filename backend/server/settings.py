@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 from pathlib import Path
 import environ
 from datetime import timedelta
+import os
 
 
 env = environ.Env(DEBUG=(bool, False))
@@ -258,3 +259,6 @@ CHANNEL_LAYERS = {
     },
 }
 TIME_ZONE = "America/Mexico_City"
+STATICFILES_DIRS = [
+os. path. join (BASE_DIR, 'static')
+]
