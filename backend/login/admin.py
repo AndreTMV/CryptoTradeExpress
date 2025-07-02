@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.utils.translation import gettext_lazy as _
 from .forms import CustomUserChangeForm, CustomUserCreationForm
-from .models import User, OTPVerification
+from .models import User, OTPVerification, API_TOKEN
 class OTPVerifiactionAdmin(admin.ModelAdmin):
     list_display = ('id', 'email', 'otp', 'is_verified')
 
@@ -47,5 +47,10 @@ class UserAdmin(BaseUserAdmin):
                 "fields": ("username","email", "password1", "password2", "is_staff", "is_active"),
             },),
         )
+
+class API_TOKENAdmin(admin.ModelAdmin):
+    list_display = ('id', 'user', 'secret_key', 'api_key')
+
 admin.site.register(User, UserAdmin)
 admin.site.register(OTPVerification, OTPVerifiactionAdmin)
+admin.site.register(API_TOKEN, API_TOKENAdmin)

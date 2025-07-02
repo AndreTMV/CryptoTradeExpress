@@ -7,5 +7,8 @@ urlpatterns = [
     path('sendOTP/',views.otpGeneration),
     path('isStaff/',views.user_is_staff),
     path('checkUsernameInfo/',views.check_username_exists),
-    path('checkEmailInfo/',views.check_email_exists)
+    path('checkEmailInfo/',views.check_email_exists),
+    path('setKeys/',views.set_tokens),
+    path('checkKeys/',views.check_tokens),
+    path('removeKeys/',views.remove_tokens),
 ]

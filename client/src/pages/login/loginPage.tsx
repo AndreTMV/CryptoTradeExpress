@@ -32,20 +32,45 @@ export function LoginPage() {
   }
 
   useEffect(() => {
-    if (isError) {
-      toast.error("El email o contraseña son incorrectas");
-    }
-
-    if (isSuccess || userState && !isError) {
-      dispatch(sendOTP({ email, password }));
-      toast.success("Se ha enviado el otp a tu correo.");
-      navigate('/OTP-verification', {
-      state: { email, password }
-    });
-    }
-
+    // Reset the state on component mount
     dispatch(reset());
-  }, [isError, isSuccess]);
+  }, [dispatch]);
+
+  useEffect(() => {
+    if (isError) {
+      toast.error(message || "El email o contraseña son incorrectas");
+    }
+
+    if (isSuccess && !isError) {
+      dispatch(sendOTP({ email }));
+      toast.success("Se ha enviado el OTP a tu correo.");
+      navigate('/OTP-verification', {
+        state: { email }
+      });
+    }
+
+    return () => {
+      dispatch(reset());
+    }
+  }, [isError, isSuccess, dispatch, navigate, message, email]);
+  // useEffect(() => {
+  //   if (isError) {
+  //     toast.error("El email o contraseña son incorrectas");
+  //   }
+
+  //   if (isSuccess || userState && !isError) {
+  //     dispatch(sendOTP({ email, password }));
+  //     toast.success("Se ha enviado el otp a tu correo.");
+  //     navigate('/OTP-verification', {
+  //     state: { email, password }
+  //   });
+  //   }
+  //   return () =>
+  //   {
+  //     dispatch(reset())
+
+  //   }
+  // }, [isError, isSuccess, userState]);
 
   return (
     <div className="flex items-center justify-center h-screen">
@@ -71,7 +96,6 @@ export function LoginPage() {
           placeholder="Contraseña"
           className="text-black w-full border p-2 mb-4 rounded-md focus:outline-none focus:border-blue-500"
         />
-        {/* Estilo para el enlace de restablecer contraseña */}
         <Link to="/reset-password" className="text-blue-500 text-sm mb-4 block">¿Olvidaste tu contraseña?</Link>
 
         <div className="flex justify-between">

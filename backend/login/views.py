@@ -6,6 +6,8 @@ import string
 # Rest Framework Imports
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
+from django.db.models.signals import post_save 
+from django.dispatch import receiver
 
 from .managers import CustomUserManager
 
@@ -13,8 +15,9 @@ from .managers import CustomUserManager
 # from twilio.rest import Client
 
 # Models Import
-from .models import User, OTPVerification
+from .models import User, OTPVerification, API_TOKEN
 from django.contrib.auth import get_user_model
+from amigos.models import FriendList
 
 # Djoser Imports
 from djoser.conf import settings
@@ -113,3 +116,72 @@ def user_is_staff(request):
 
 
 
+@receiver(post_save, sender=User)
+def create_friend_list(sender, instance, **kwargs):
+    try:
+        # Intenta obtener el FriendList asociado con el usuario
+        friend_list = FriendList.objects.get(user=instance)
+    except FriendList.DoesNotExist:
+        # Si no existe, crea uno nuevo
+        friend_list = FriendList.objects.create(user=instance)
+        friend_list.friends.set([])
+
+
+@api_view(['GET'])
+def check_tokens(request):
+    user_id = request.query_params.get('user')
+    if user_id:
+        try:
+            user = User.objects.get(id=user_id)
+        except User.DoesNotExist:
+            return Response({"El usuario no existe"}, status=404)
+
+        if user:
+            api = API_TOKEN.objects.filter(user=user).exists()
+
+            return Response({'exists':api})
+
+    else:
+        return Response({'Debes brindar un usuario'}, status=400)
+
+@api_view(['POST'])
+def set_tokens(request):
+    user_id = request.data.get('user')
+    if user_id:
+        try:
+            user = User.objects.get(id=user_id)
+        except User.DoesNotExist:
+            return Response({"El usuario no existe"}, status=404)
+
+        secret_key = request.data.get('secret')
+        api_key = request.data.get('key')
+        
+        tokens = API_TOKEN(
+            user = user,
+            api_key = api_key,
+            secret_key = secret_key
+        )
+
+        tokens.save()
+        return Response(status=200)
+    else:
+        return Response({'Debes brindar un usuario'}, status=400)
+
+@api_view(['DELETE'])
+def remove_tokens(request):
+    user_id = request.query_params.get('user')
+    if user_id:
+        try:
+            user = User.objects.get(id=user_id)
+        except User.DoesNotExist:
+            return Response({"El usuario no existe"}, status=404)
+
+        tokens = API_TOKEN.objects.get(user=user)
+        if tokens:
+            tokens.delete()
+            return Response(status=200)
+        else:
+            return Response({'no api keys'}, status=404)
+
+    else:
+        return Response({'Debes brindar un usuario'}, status=400)

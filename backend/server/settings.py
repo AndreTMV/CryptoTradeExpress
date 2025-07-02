@@ -31,7 +31,7 @@ SECRET_KEY = env("SECRET_KEY")
 DEBUG = env("DEBUG")
 
 ALLOWED_HOSTS = []
-
+AUTH_USER_MODEL = 'login.User'
 CORS_ALLOWED_ORIGINS = [
     "http://127.0.0.1:5173",
     "http://localhost:5173",
@@ -59,6 +59,13 @@ INSTALLED_APPS = [
     'videos',
     'quiz',
     'chat',
+    'predicciones',
+    'amigos',
+    'compras',
+    'prices_alert',
+    'noticias',
+    'simulador',
+    'cartera',
 ]
 
 MIDDLEWARE = [
@@ -161,7 +168,8 @@ STATIC_URL = "static/"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-AUTH_USER_MODEL = 'login.User'
+
+
 LOGIN_URL = 'two_factor:login'
 
 

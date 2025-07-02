@@ -30,6 +30,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     def get_full_name(self):
         return f"{self.username} {self.email}"
 
+
 # * Table that stores the OTP and is verfied or not
 class OTPVerification(models.Model):
     email = models.EmailField(_('Email'), max_length=254)
@@ -38,3 +39,14 @@ class OTPVerification(models.Model):
 
     def __str__(self):
         return self.email
+
+
+class API_TOKEN(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, default=-1) 
+    api_key = models.CharField(max_length=200)
+    secret_key = models.CharField(max_length=200)
+    class Meta:
+        verbose_name_plural = 'API KEYS'
+
+    
+

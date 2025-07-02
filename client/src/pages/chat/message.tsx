@@ -7,46 +7,56 @@ import { RootState } from '../../app/store';
 import moment from 'moment';
 import { toast } from 'react-hot-toast';
 
-function Message() {
+function Message()
+{
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { userInfo, isStaff, isError, isLoading } = useSelector((state: RootState) => state.auth);
-  const { message } = useSelector((state: RootState) => state.chat);
-  const [messages, setMessages] = useState([]);
-  const [newSearches, setSearches] = useState({ search: '' });
+  const { userInfo, isStaff, isError, isLoading } = useSelector( ( state: RootState ) => state.auth );
+  const { message } = useSelector( ( state: RootState ) => state.chat );
+  const [messages, setMessages] = useState( [] );
+  const [newSearches, setSearches] = useState( { search: '' } );
 
-  const handleChange = (evt) => {
-    setSearches({
+  const handleChange = ( evt ) =>
+  {
+    setSearches( {
       ...newSearches,
       [evt.target.name]: evt.target.value,
-    });
+    } );
   };
 
-  const SearchUser = async () => {
-    try {
-      const search = await dispatch(searchUser(newSearches.username));
-      console.log(search.payload);
-      navigate('/search/' + newSearches.username);
-    } catch (error) {
-      console.log(error);
-      toast.error('El usuario no existe');
+  const SearchUser = async () =>
+  {
+    try
+    {
+      const search = await dispatch( searchUser( newSearches.username ) );
+      console.log( search.payload );
+      navigate( '/search/' + newSearches.username );
+    } catch ( error )
+    {
+      console.log( error );
+      toast.error( 'El usuario no existe' );
     }
   };
 
-  async function getUserMessages(userId: number) {
-    const myMessages = await dispatch(getMyMessages(userId));
+  async function getUserMessages( userId: number )
+  {
+    const myMessages = await dispatch( getMyMessages( userId ) );
     return myMessages;
   }
 
-  useEffect(() => {
-    try {
-      getUserMessages(userInfo.id).then((res) => {
-        setMessages((prevState) => res.payload);
-      });
-    } catch (error) {
-      console.log(error);
+  useEffect( () =>
+  {
+    try
+    {
+      getUserMessages( userInfo.id ).then( ( res ) =>
+      {
+        setMessages( ( prevState ) => res.payload );
+      } );
+    } catch ( error )
+    {
+      console.log( error );
     }
-  }, []);
+  }, [] );
 
   return (
     <div>
@@ -71,14 +81,14 @@ function Message() {
                   </button>
                 </div>
               </div>
-              {messages.map((message) => (
+              {messages.map( ( message ) => (
                 <Link
-                  to={'/inbox/' + (message.sender === userInfo.id ? message.receiver : message.sender) + '/'}
+                  to={'/inbox/' + ( message.sender === userInfo.id ? message.receiver : message.sender ) + '/'}
                   className="block border-b border-gray-200 p-3 hover:bg-gray-100 relative">
                   <div className="flex items-center text-gray-900">
                     <div className="flex-grow-1">
                       {message.sender === userInfo.id &&
-                        (message.receiver_profile.name !== null ? message.receiver_profile.name : message.receiver.username)}
+                        ( message.receiver_profile.name !== null ? message.receiver_profile.name : message.receiver.username )}
                       {message.sender !== userInfo.id && message.sender_profile.name}
                       <div className="text-sm text-gray-500">
                         <span className="fas fa-circle text-green-500 mr-1"></span>
@@ -86,13 +96,16 @@ function Message() {
                       </div>
                     </div>
                     <span className="text-sm text-gray-500 absolute bottom-0 right-0">
-                      {moment.utc(message.date).local().startOf('seconds').fromNow()}
+                      {moment.utc( message.date ).local().startOf( 'seconds' ).fromNow()}
                     </span>
                   </div>
                 </Link>
-              ))}
+              ) )}
             </div>
           </div>
+          <button className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded ml-10 mt-3">
+            <Link to="/dashboard">Regresar</Link>
+          </button>
         </div>
       </main>
     </div>

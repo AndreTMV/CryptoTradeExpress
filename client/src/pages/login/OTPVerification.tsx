@@ -49,7 +49,6 @@ export function OTPVerification() {
     }
 
     dispatch(reset());
-    dispatch(getUserInfo())
   }, [isError, OTPverified, isLoading, navigate, dispatch]);
 
   return (

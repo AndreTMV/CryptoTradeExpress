@@ -2,7 +2,7 @@ import React, {useState, useEffect} from 'react'
 import { useDispatch } from 'react-redux';
 import { useSelector } from 'react-redux'
 import {Link} from 'react-router-dom';
-import { checkStaff } from '../features/auth/authSlice';
+import { checkStaff, getUserInfo } from '../features/auth/authSlice';
 import { getUserReports } from '../features/quiz/quizSlice';
 import { RootState } from '../app/store'; 
 
@@ -18,6 +18,12 @@ const Dashboard = () => {
     const { quizIsError, quizIsSuccess, quizIsLoading, quizMessage, quiz } = useSelector((state: RootState) => state.quiz);
         
     const dispatch = useDispatch();
+
+    useEffect(() => {
+        dispatch(getUserInfo())
+    }, [])
+    
+
     React.useEffect( () =>
     {
         dispatch(checkStaff({ username: userInfo.username}))
@@ -56,22 +62,23 @@ const Dashboard = () => {
         <div className="container mx-auto px-4 py-8">
             <h1 className="text-2xl font-semibold mb-4">¡Bienvenido, {userInfo.username}!</h1>
             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                <button className="btn text-white bg-indigo-300 rounded-md">Comprar</button>
-                <button className="btn text-white bg-indigo-300 rounded-md">Bot</button>
-                <button className="btn text-white bg-indigo-300 rounded-md">Sugerencias</button>
-                <button className="btn text-white bg-indigo-300 rounded-md">Transacciones</button>
-                <button className="btn text-white bg-indigo-300 rounded-md">Gráficas</button>
-                <button className="btn text-white bg-indigo-300 rounded-md">Alertas de precios</button>
-                <button className="btn text-white bg-indigo-300 rounded-md">Predicciones</button>
-                <button className="btn text-white bg-indigo-300 rounded-md">Noticias</button>
+                <button className="btn text-white bg-indigo-300 rounded-md"><Link to={'/comprar'}>Comprar</Link></button>
+                <button className="btn text-white bg-indigo-300 rounded-md"><Link to="/bot">Bot</Link></button>
+                <button className="btn text-white bg-indigo-300 rounded-md"><Link to="/chooseCrypto10">Sugerencias</Link></button>
+                <button className="btn text-white bg-indigo-300 rounded-md"><Link to={'/seeTransactions'}>Transacciones</Link></button>
+                <button className="btn text-white bg-indigo-300 rounded-md"><Link to={'/graphDates'}>Gráficas</Link></button>
+                <button className="btn text-white bg-indigo-300 rounded-md"><Link to={'/priceAlert'}>Alertas de precios</Link></button>
+                <button className="btn text-white bg-indigo-300 rounded-md"><Link to="/chooseCrypto">Predicciones</Link></button>
+                <button className="btn text-white bg-indigo-300 rounded-md"><Link to='/news'>Noticias</Link></button>
                 <button className="btn text-white bg-indigo-300 rounded-md"><Link to="/inbox">Chat</Link></button>
                 <button className="btn text-white bg-indigo-300 rounded-md"><Link to="/perfilPage">Perfil</Link></button>
-                <button className="btn text-white bg-indigo-300 rounded-md">Amigos</button>
+                <button className="btn text-white bg-indigo-300 rounded-md"><Link to="/friends">Amigos</Link></button>
                 <button className="btn text-white bg-indigo-300 rounded-md"><Link to="/sectionsPage">Video</Link></button>
                 <button className="btn text-white bg-indigo-300 rounded-md"><Link to="/allQuizzes">Cuestionarios</Link></button>
-                <button className="btn text-white bg-indigo-300 rounded-md">Simulador</button>
-                <button className="btn text-white bg-indigo-300 rounded-md">Cartera</button>
-                <button className="btn text-white bg-indigo-600 rounded-md">API</button>
+                <button className="btn text-white bg-indigo-300 rounded-md"><Link to="/simulador">Simulador</Link></button>
+                <button className="btn text-white bg-indigo-300 rounded-md">
+                <Link to="/cartera">Cartera</Link>
+                </button>
             </div>
             {showPopup && (
                 <div className="fixed inset-0 flex items-center justify-center bg-gray-800 bg-opacity-75">

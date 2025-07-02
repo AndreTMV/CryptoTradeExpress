@@ -191,6 +191,24 @@ export const checkStaff = createAsyncThunk(
         }
     }
 )
+
+export const removeKeys = createAsyncThunk(
+    "auth/removeKeys",
+    async ( userData, thunkAPI ) =>
+    {
+        try
+        {
+            await authService.removeKeys(userData)
+        } catch (error) {
+            const message = (error.response && error.response.data
+                && error.response.data.message) ||
+                error.message || error.toString()
+
+            return thunkAPI.rejectWithValue(message)
+        }
+    }
+)
+
 export const authSlice = createSlice({
     name: "auth",
     initialState,
@@ -330,6 +348,19 @@ export const authSlice = createSlice({
                 state.logoutState = false
             })
             .addCase(checkStaff.rejected, (state, action) => {
+                state.isLoading = false
+                state.isStaff = false
+                state.isError = true
+                state.message = action.payload
+            })
+            .addCase(removeKeys.pending, (state) => {
+                state.isLoading = true
+            })
+            .addCase(removeKeys.fulfilled, (state, action) => {
+                state.isLoading = false
+                state.isSuccess = true
+            })
+            .addCase(removeKeys.rejected, (state, action) => {
                 state.isLoading = false
                 state.isStaff = false
                 state.isError = true

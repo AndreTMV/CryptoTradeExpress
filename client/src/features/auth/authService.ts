@@ -12,6 +12,7 @@ const CHECK_EMAIL= `${BACKEND_DOMAIN}/api/v1/auth/checkEmailInfo/`
 const SEND_OTP = `${BACKEND_DOMAIN}/api/v1/auth/sendOTP/`
 const CHECK_OTP = `${BACKEND_DOMAIN}/api/v1/auth/checkOTP/`
 const CHECK_STAFF = `${BACKEND_DOMAIN}/api/v1/auth/isStaff/`
+const REMOVE_KEYS = `${BACKEND_DOMAIN}/api/v1/auth/removeKeys/`
 
 const register = async ( userData: any ) =>
 {
@@ -24,6 +25,7 @@ const register = async ( userData: any ) =>
     const response = await axios.post(REGISTER_URL, userData, config)
     return response.data
 }
+
 const login = async (userData: any) => {
     const config = {
         headers: {
@@ -152,7 +154,18 @@ const checkStaff = async ( userData: any ) =>
     return response.data
 }
 
-const authService = {register, login, logout, activate, resetPassword, resetPasswordConfirm, getUserInfo, checkEmail, checkUserName, sendOTP, checkOTP, checkStaff}
+const removeKeys = async ( userData: any ) =>
+{
+    const config = {
+        params: {
+            user: userData.id
+        }
+    }
+    const response = await axios.delete(REMOVE_KEYS, config)
+    return response.data
+}
+
+const authService = {register, login, logout, activate, resetPassword, resetPasswordConfirm, getUserInfo, checkEmail, checkUserName, sendOTP, checkOTP, checkStaff, removeKeys}
 
 export default authService 
 

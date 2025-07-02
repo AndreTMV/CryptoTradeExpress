@@ -22,20 +22,24 @@
 import React, { useState } from 'react';
 import { FaBell } from 'react-icons/fa';
 import { useSelector, useDispatch } from 'react-redux';
-import { clearNotifications } from '../features/notificationSlice'; import { RootState } from '../app/store'; 
-interface NotificationBellProps {
+import { clearNotifications } from '../features/notificationSlice'; import { RootState } from '../app/store';
+interface NotificationBellProps
+{
   notificationCount: number;
 }
 
-const NotificationBell: React.FC<NotificationBellProps> = ({ notificationCount }) => {
-  const [showNotifications, setShowNotifications] = useState(false);
-  const notifications = useSelector((state: RootState) => state.notifications.notificationsInformation);
+const NotificationBell: React.FC<NotificationBellProps> = ( { notificationCount } ) =>
+{
+  const [showNotifications, setShowNotifications] = useState( false );
+  const notifications = useSelector( ( state: RootState ) => state.notifications.notificationsInformation );
   const dispatch = useDispatch();
 
-  const handleClick = () => {
-    setShowNotifications(!showNotifications);
-    if (showNotifications) {
-      dispatch(clearNotifications());
+  const handleClick = () =>
+  {
+    setShowNotifications( !showNotifications );
+    if ( showNotifications )
+    {
+      dispatch( clearNotifications() );
     }
   };
 
@@ -48,12 +52,12 @@ const NotificationBell: React.FC<NotificationBellProps> = ({ notificationCount }
         </div>
       )}
       {showNotifications && (
-        <div className="absolute top-full right-0 mt-2 w-64 bg-white border border-gray-200 shadow-lg rounded-md p-4">
+        <div className="absolute top-full right-0 mt-2 w-64 bg-white border border-gray-200 shadow-lg rounded-md p-4 text-gray-700">
           {notifications.length > 0 ? (
             <ul>
-              {notifications.map((notification, index) => (
+              {notifications.map( ( notification, index ) => (
                 <li key={index}>{notification}</li>
-              ))}
+              ) )}
             </ul>
           ) : (
             <p>No hay notificaciones</p>
