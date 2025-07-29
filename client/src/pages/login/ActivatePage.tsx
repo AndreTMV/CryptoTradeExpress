@@ -1,55 +1,59 @@
-import React from "react";
-import { Link } from "react-router-dom";
+import React, { useEffect } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "react-hot-toast";
-import { useEffect } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
-import { useDispatch, useSelector } from 'react-redux'
-import { activate, reset } from '../../features/auth/authSlice'
-import Spinner from '../../components/Spinner'
+import { useDispatch, useSelector } from "react-redux";
+import { activate, reset } from "../../features/auth/authSlice";
+import Spinner from "../../components/Spinner";
+import type { RootState, AppDispatch } from "../../app/store";
+
 export function ActivationPage() {
+  const { uid, token } = useParams();
+  const dispatch = useDispatch<AppDispatch>();
+  const navigate = useNavigate();
 
-      const { uid, token } = useParams()
-      const dispatch = useDispatch()
-      const navigate = useNavigate()
+  const { isLoading, isError, isSuccess, message } = useSelector((state: RootState) => state.auth);
 
-      const { isLoading, isError, isSuccess, message } = useSelector((state) => state.auth)
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!uid || !token) {
+      toast.error("Parámetros inválidos de activación.");
+      return;
+    }
+    dispatch(activate({ uid, token }));
+  };
 
-      const handleSubmit = (e:any) => {
-          e.preventDefault()
-
-          const userData = {
-              uid,
-              token
-          }
-          dispatch(activate(userData))
-          toast.success("Tu cuenta ha sido creada! Ya puedes iniciar sesion.")
-      }
-
-      useEffect(() => {
-          if (isError) {
-              toast.error(message)
-          }
-
-          if (isSuccess) {
-              navigate("/")
-          }
-
-          dispatch(reset())
-
-      }, [isError, isSuccess, navigate, dispatch])
+  useEffect(() => {
+    if (isError) {
+      toast.error(message || "Ocurrió un error al activar tu cuenta.");
+    }
+    if (isSuccess) {
+      toast.success("¡Tu cuenta ha sido activada! Ya puedes iniciar sesión.");
+      navigate("/login");
+    }
+    return () => {
+      dispatch(reset());
+    };
+  }, [isError, isSuccess, message, navigate, dispatch]);
 
   return (
-    <div className="flex flex-col items-center justify-center h-screen">
-      <h1 className="text-3xl font-bold mb-6 text-center text-blue-500">
-        Activar Cuenta
-      </h1>
-      {isLoading && <Spinner />}
-      <button
-        className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 mt-4 rounded"
-        onClick={handleSubmit}
-      >
-        Activar Cuenta
-      </button>
+    <div className="flex min-h-screen w-full items-center justify-center bg-gradient-to-br from-blue-100 via-white to-slate-100">
+      <div className="flex w-full max-w-sm flex-col items-center rounded-2xl border border-slate-100 bg-white/95 p-8 shadow-2xl">
+        <h1 className="mb-3 text-center text-3xl font-bold text-blue-600">
+          Activar Cuenta
+        </h1>
+        <p className="mb-5 text-center text-slate-500">
+          Haz clic en el botón para activar tu cuenta.
+        </p>
+        {isLoading && <Spinner size={24} />}
+        <button
+          className={`mt-2 w-full rounded-lg bg-blue-500 px-4 py-2 font-bold text-white shadow transition hover:bg-blue-600 ${isLoading ? "cursor-not-allowed opacity-60" : ""
+            }`}
+          onClick={handleSubmit}
+          disabled={isLoading}
+        >
+          Activar Cuenta
+        </button>
+      </div>
     </div>
   );
 }

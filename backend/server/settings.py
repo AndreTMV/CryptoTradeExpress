@@ -100,36 +100,17 @@ TEMPLATES = [
 WSGI_APPLICATION = "server.wsgi.application"
 
 
-# Database
-# https://docs.djangoproject.com/en/4.2/ref/settings/#databases
-
-# DATABASES = {
-#     "default": {
-#         "ENGINE": "django.db.backends.sqlite3",
-#         "NAME": BASE_DIR / "db.sqlite3",
-#     }
-# }
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'backend',
-        'USER': 'postgres',
-        'PASSWORD': 'admin',
-        'HOST': 'localhost',  # Puedes cambiar esto si tu base de datos está en otro lugar
-        'PORT': '5433',       # El puerto predeterminado de PostgreSQL es 5432
+        'ENGINE': env('DB_ENGINE'),
+        'NAME': env('DB_NAME'),
+        'USER': env('DB_USER'),
+        'PASSWORD': env('DB_PASSWORD'),
+        'HOST': env('DB_HOST'),
+        'PORT': env('DB_PORT'),
     }
 }
 
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.postgresql',
-#         'NAME': 'nombre_de_tu_basededatos',
-#         'USER': 'tu_usuario_de_postgresql',
-#         'PASSWORD': 'tu_contraseña_de_postgresql',
-#         'HOST': 'localhost',
-#         'PORT': '5432',
-#     }
-# }
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
 
@@ -154,7 +135,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = "en-us"
 
-TIME_ZONE = "UTC"
+TIME_ZONE = "America/Mexico_City"
 
 USE_I18N = True
 
@@ -167,7 +148,6 @@ STATIC_URL = "static/"
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
-
 
 
 LOGIN_URL = 'two_factor:login'
@@ -206,23 +186,18 @@ DJOSER = {
     'SERIALIZERS': {
         'user_create': 'login.serializers.CreateUserSerializer',
         'user': "login.serializers.CreateUserSerializer",
-        'user_delete': "djoser.serializers.UserDeleteSerializer",      
+        'user_delete': "djoser.serializers.UserDeleteSerializer",
     },
 }
-EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
-# EMAIL_HOST = env("EMAIL_HOST")
-EMAIL_USE_TLS = True
-# EMAIL_PORT = env("EMAIL_PORT")
-EMAIL_HOST_USER = env("EMAIL_HOST_USER")
-EMAIL_HOST_PASSWORD = env("EMAIL_HOST_PASSWORD")
-DEFAULT_FROM_EMAIL = "info@crypto-trade-express.com"
-# DOMAIN = env("DOMAIN")
-SITE_NAME = "Crypto Trade Express"
-EMAIL_HOST='smtp.gmail.com'
-EMAIL_HOST_USER='andretmv12345@gmail.com'
-EMAIL_HOST_PASSWORD='vfhfqfzmkammresl'
-EMAIL_PORT=587
-DOMAIN='localhost:5173'
+EMAIL_BACKEND = env('EMAIL_BACKEND')
+EMAIL_USE_TLS = env('EMAIL_USE_TLS')
+DEFAULT_FROM_EMAIL = env('DEFAULT_FROM_EMAIL')
+SITE_NAME = env('SITE_NAME')
+EMAIL_HOST = env('EMAIL_HOST')
+EMAIL_HOST_USER = env('EMAIL_HOST_USER')
+EMAIL_HOST_PASSWORD = env('EMAIL_HOST_PASSWORD')
+EMAIL_PORT = env('EMAIL_PORT')
+DOMAIN = env('DOMAIN')
 
 LOGGING = {
     'version': 1,
@@ -266,7 +241,7 @@ CHANNEL_LAYERS = {
         },
     },
 }
-TIME_ZONE = "America/Mexico_City"
 STATICFILES_DIRS = [
-os. path. join (BASE_DIR, 'static')
+    os. path. join(BASE_DIR, 'static')
 ]
+
