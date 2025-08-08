@@ -11,10 +11,10 @@ import { ResetPasswordPageConfirm } from './pages/login/ResetPasswordConfirmPage
 import Nav from "./components/Nav";
 import { OTPVerification } from './pages/login/OTPVerification';
 import UploadedVideosPage from './pages/videos/videoMain';
-import { UploadVideoPage } from './pages/videos/uploadVideoForm';
+import UploadVideoPage from './pages/videos/uploadVideoForm';
 import VideosSectionPage from './pages/videos/videosSection';
-import { UploadSection } from './pages/videos/uploadSection';
-import { DeleteSection } from './pages/videos/deleteSection';
+import UploadSection from './pages/videos/uploadSection';
+import DeleteSection from './pages/videos/deleteSection';
 import NotAcceptedVideosPage from './pages/videos/noAcceptedVideos';
 import { CreatePerfilPage } from './pages/perfil/createPerfilForm';
 import { ActualizarPerfilPage } from './pages/perfil/updatePerfil';
@@ -86,54 +86,56 @@ function AppRoutes() {
   }
 
   return (
-    <div className="container mx-auto">
+    <div className="min-h-screen w-full bg-gradient-to-br from-blue-50 via-white to-blue-200">
       {!hideNav && <Nav />}
-      <Routes>
-        <Route path='/dashboard' element={<Dashboard />} />
-        <Route path='/uploadVideo' element={<UploadVideoPage />} />
-        <Route path='/videosMain' element={<UploadedVideosPage />} />
-        <Route path='/sectionsPage' element={<VideosSectionPage />} />
-        <Route path='/uploadSection' element={<UploadSection />} />
-        <Route path='/deleteSection' element={<DeleteSection />} />
-        <Route path='/notAcceptedVideos' element={<NotAcceptedVideosPage />} />
-        <Route path='/perfilPage' element={<CreatePerfilPage />} />
-        <Route path='/updatePerfil' element={<ActualizarPerfilPage />} />
-        <Route path='/createQuiz' element={<CreateQuizPage />} />
-        <Route path='/addQuestions' element={<AddQuestionsPage />} />
-        <Route path='/renderQuiz' element={<RenderQuizPage />} />
-        <Route path='/allQuizzes' element={<QuizThumbnails />} />
-        <Route path='/answerQuiz' element={<RenderAnswerQuizPage />} />
-        <Route path='/renderReports' element={<ReportThumbnails />} />
-        <Route path='/updateQuestions' element={<UpdateQuestionsPage />} />
-        <Route path='/inbox' element={<Message />}></Route>
-        <Route path='/inbox/:id' element={<MessageDetail />}></Route>
-        <Route path='/search/:username' element={<SearchUsers />}></Route>
-        <Route path='/chooseCrypto' element={<ChooseCrypto />}></Route>
-        <Route path='/graphPrediction' element={<GraphPrediction />}></Route>
-        <Route path='/chooseCrypto10' element={<ChooseCrypto10 />}></Route>
-        <Route path='/graphLast10Days' element={<GraphLast10Days />}></Route>
-        <Route path='/seeTransactions' element={<SeeTransactions />}></Route>
-        <Route path='/transactions' element={<TransactionsTable />}></Route>
-        <Route path='/graphDates' element={<GraphDates />}></Route>
-        <Route path='/grafica' element={<GenerateGraph />}></Route>
-        <Route path='/priceAlert' element={<PriceAlert />}></Route>
-        <Route path='/friends' element={<FriendHomePage />}></Route>
-        <Route path='/seeProfile/:id' element={<SeeProfile />}></Route>
-        <Route path='/news' element={<NewsTable />}></Route>
-        <Route path='/API' element={<APIPage />}></Route>
-        <Route path='/cartera' element={<CarteraPage />}></Route>
-        <Route path="/cartera-alert/:crypto" element={<CarteraAlert />} />
-        <Route path='/comprar' element={<SellBuy />}></Route>
-        <Route path='/bot' element={<BotPage />}></Route>
-        <Route path='/simulador' element={<Simulador />}></Route>
-        <Route path='*' element={<NotFoundPage />}></Route>
-      </Routes>
+
+      <main className={!hideNav ? "pt-[68px]" : ""}>
+        <Routes>
+          <Route path='/dashboard' element={<Dashboard />} />
+          <Route path='/uploadVideo' element={<UploadVideoPage />} />
+          <Route path='/videosMain' element={<UploadedVideosPage />} />
+          <Route path='/sectionsPage' element={<VideosSectionPage />} />
+          <Route path='/uploadSection' element={<UploadSection />} />
+          <Route path='/deleteSection' element={<DeleteSection />} />
+          <Route path='/notAcceptedVideos' element={<NotAcceptedVideosPage />} />
+          <Route path='/perfilPage' element={<CreatePerfilPage />} />
+          <Route path='/updatePerfil' element={<ActualizarPerfilPage />} />
+          <Route path='/createQuiz' element={<CreateQuizPage />} />
+          <Route path='/addQuestions' element={<AddQuestionsPage />} />
+          <Route path='/renderQuiz' element={<RenderQuizPage />} />
+          <Route path='/allQuizzes' element={<QuizThumbnails />} />
+          <Route path='/answerQuiz' element={<RenderAnswerQuizPage />} />
+          <Route path='/renderReports' element={<ReportThumbnails />} />
+          <Route path='/updateQuestions' element={<UpdateQuestionsPage />} />
+          <Route path='/inbox' element={<Message />}></Route>
+          <Route path='/inbox/:id' element={<MessageDetail />}></Route>
+          <Route path='/search/:username' element={<SearchUsers />}></Route>
+          <Route path='/chooseCrypto' element={<ChooseCrypto />}></Route>
+          <Route path='/graphPrediction' element={<GraphPrediction />}></Route>
+          <Route path='/chooseCrypto10' element={<ChooseCrypto10 />}></Route>
+          <Route path='/graphLast10Days' element={<GraphLast10Days />}></Route>
+          <Route path='/seeTransactions' element={<SeeTransactions />}></Route>
+          <Route path='/transactions' element={<TransactionsTable />}></Route>
+          <Route path='/graphDates' element={<GraphDates />}></Route>
+          <Route path='/grafica' element={<GenerateGraph />}></Route>
+          <Route path='/priceAlert' element={<PriceAlert />}></Route>
+          <Route path='/friends' element={<FriendHomePage />}></Route>
+          <Route path='/seeProfile/:id' element={<SeeProfile />}></Route>
+          <Route path='/news' element={<NewsTable />}></Route>
+          <Route path='/API' element={<APIPage />}></Route>
+          <Route path='/cartera' element={<CarteraPage />}></Route>
+          <Route path="/cartera-alert/:crypto" element={<CarteraAlert />} />
+          <Route path='/comprar' element={<SellBuy />}></Route>
+          <Route path='/bot' element={<BotPage />}></Route>
+          <Route path='/simulador' element={<Simulador />}></Route>
+          <Route path='*' element={<NotFoundPage />}></Route>
+        </Routes>
+      </main>
       <Toaster />
-    </div>
+    </div >
   );
 }
 
-// Ahora usa este componente con BrowserRouter al tope:
 function App() {
   return (
     <BrowserRouter>

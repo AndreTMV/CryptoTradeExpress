@@ -61,7 +61,7 @@ export function OTPVerification() {
           id="otp"
           name="otp"
           type="text"
-          maxLength={6}
+          maxLength={10}
           value={otp}
           onChange={handleChange}
           placeholder="Código OTP"
