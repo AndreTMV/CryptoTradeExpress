@@ -1,186 +1,203 @@
-import React, { useState, useEffect } from "react";
-import { reset ,createAnswer, createQuestion, updateNumberQuestions } from '../features/quiz/quizSlice'
-import { useDispatch, useSelector } from "react-redux";
-import { RootState } from '../app/store'; 
+import React from "react";
+import { useDispatch } from "react-redux";
+import type { AppDispatch } from "../app/store";
+import { createAnswer, createQuestion } from "../features/quiz/quizSlice";
+import type { QuestionType } from "../features/quiz/types";
 
-interface QuestionProps {
-  type: string;
-  onDelete: () => void;
+export interface QuestionProps {
+  id: number;
+  type: QuestionType;
   quizId: number;
-  saveQuestion: boolean
+  onDelete: () => void;
+  onRegister: (id: number, saveFn: () => Promise<void>) => void;
+  onUnregister: (id: number) => void;
 }
 
+const Question: React.FC<QuestionProps> = ({
+  id,
+  type,
+  quizId,
+  onDelete,
+  onRegister,
+  onUnregister,
+}) => {
+  const dispatch = useDispatch<AppDispatch>();
 
-const Question: React.FC<QuestionProps> = ({ type, onDelete, quizId, saveQuestion }) => {
-  const [questionText, setQuestion] = useState("")
-  const [options, setOptions] = useState([""]);
-  const [correctAnswers, setCorrectAnswers] = useState<boolean[]>([]);
-  const [answerText, setAnswerText] = useState("")
-  const dispatch = useDispatch();
-  const { quizIsError, quizIsSuccess, quizIsLoading, quizMessage, quiz, question, answer } = useSelector((state: RootState) => state.quiz);
+  const [questionText, setQuestionText] = React.useState<string>("");
+  const [options, setOptions] = React.useState<string[]>(
+    type === "true_false" ? ["Verdadero", "Falso"] : [""]
+  );
+  const [correctAnswers, setCorrectAnswers] = React.useState<boolean[]>(
+    type === "true_false" ? [false, false] : [false]
+  );
+  const [answerText, setAnswerText] = React.useState<string>("");
 
-
-  const addOption = () => {
-    setOptions([...options, ""]);
-    setCorrectAnswers([...correctAnswers, false]);
-
-  };
-
+  // Si el tipo cambia (no suele cambiar), ajusta opciones V/F
   React.useEffect(() => {
     if (type === "true_false") {
       setOptions(["Verdadero", "Falso"]);
       setCorrectAnswers([false, false]);
+      setAnswerText("");
+    } else if (type === "multiple_choice") {
+      setOptions(["", ""]);
+      setCorrectAnswers([false, false]);
+      setAnswerText("");
+    } else {
+      // fill_in_the_blank
+      setOptions([""]);
+      setCorrectAnswers([true]); // irrelevante, pero evita warnings
     }
   }, [type]);
 
+  const addOption = () => {
+    setOptions((prev) => [...prev, ""]);
+    setCorrectAnswers((prev) => [...prev, false]);
+  };
+
   const handleChangeOption = (index: number, value: string) => {
-    const newOptions = [...options];
-    newOptions[index] = value;
-    setOptions(newOptions);
-  };
-
-  const handleRemoveOption = (index: number) => {
-    const newOptions = [...options];
-    newOptions.splice(index, 1);
-    setOptions(newOptions);
-    const newCorrectAnswers = [...correctAnswers];
-    newCorrectAnswers.splice(index, 1);
-    setCorrectAnswers(newCorrectAnswers);
-  };
-
-  const handleSelectCorrectAnswer = (index: number) => {
-    const newCorrectAnswers = [...correctAnswers];
-    newCorrectAnswers[index] = !correctAnswers[index];
-    setCorrectAnswers(newCorrectAnswers);
-  };
-
-  const handleRadioChange = (value: string) => {
-    const newCorrectAnswers = [value === "true", value === "false"];
-    setCorrectAnswers(newCorrectAnswers);
-  };
-const handleSaveQuestion = () => {
-  if (questionText.trim() === "") {
-    throw new Error("La pregunta no puede estar en blanco.");
-  }
-  const questionData = {
-    quiz: quizId,
-    question_type: type,
-    text: questionText
-  };
-
-  // Crear la pregunta y manejarla con .then()
-  dispatch(createQuestion(questionData))
-    .then((createdQuestion) => {
-      if (type === "true_false" || type === "multiple_choice") {
-        const answersData = options.map((option, index) => ({
-          question: createdQuestion.payload.id,
-          text: option,
-          correct: correctAnswers[index]
-        }));
-        // Crear todas las respuestas y manejarlas con .then()
-        Promise.all(answersData.map(answer => dispatch(createAnswer(answer))))
-          .then(() => {
-            console.log("Todas las respuestas fueron creadas.");
-          })
-          .catch(error => {
-            console.error("Error al crear las respuestas:", error);
-          });
-      } else if (type === "fill_in_the_blank") {
-        if (answerText.trim() === "") {
-          throw new Error("La respuesta no puede estar en blanco.");
-        }
-        const answerData = {
-          question: createdQuestion.payload.id,
-          text: answerText,
-          correct: true
-        };
-        // Crear la respuesta y manejarla con .then()
-        dispatch(createAnswer(answerData))
-          .then(() => {
-            console.log("La respuesta fue creada.");
-          })
-          .catch(error => {
-            console.error("Error al crear la respuesta:", error);
-          });
-      }
-    })
-    .catch(error => {
-      console.error("Error al guardar la pregunta:", error);
+    setOptions((prev) => {
+      const next = [...prev];
+      next[index] = value;
+      return next;
     });
   };
 
-  React.useEffect(() => {
-    if ( quizIsError )
-    {
-      console.log(quizMessage, "Error al guardar la pregunta ")
-    }
-    else
-    {
-      console.log(quizMessage)
-    }
-  
+  const handleRemoveOption = (index: number) => {
+    setOptions((prev) => prev.filter((_, i) => i !== index));
+    setCorrectAnswers((prev) => prev.filter((_, i) => i !== index));
+  };
 
-  }, [quizIsError, quizIsLoading, quizIsSuccess, quiz, answer, question, dispatch])
-  
-  useEffect(() => {
-    if ( saveQuestion )
-    {
-      handleSaveQuestion()
-    } else
-    {
-      console.log(quizMessage)
+  const handleSelectCorrectAnswer = (index: number) => {
+    setCorrectAnswers((prev) => {
+      const next = [...prev];
+      next[index] = !prev[index];
+      return next;
+    });
+  };
+
+  const handleRadioChange = (value: "true" | "false") => {
+    setCorrectAnswers([value === "true", value === "false"]);
+  };
+
+  /** Validación mínima por tipo */
+  const validate = (): string | null => {
+    if (questionText.trim().length < 3) return "La pregunta es demasiado corta.";
+    if (type === "multiple_choice") {
+      if (options.length < 2) return "Agrega al menos 2 opciones.";
+      if (options.some((o) => !o.trim())) return "Todas las opciones deben tener texto.";
+      if (!correctAnswers.some(Boolean)) return "Debes marcar al menos una opción correcta.";
     }
-  }, [saveQuestion])
-  
+    if (type === "true_false") {
+      if (!correctAnswers.some(Boolean)) return "Selecciona Verdadero o Falso como respuesta.";
+    }
+    if (type === "fill_in_the_blank") {
+      if (!answerText.trim()) return "Ingresa la respuesta esperada.";
+    }
+    return null;
+  };
+
+  /** Save function registrada al padre */
+  const saveFn = React.useCallback(async () => {
+    const err = validate();
+    if (err) throw err;
+
+    // 1) Crea la pregunta
+    const created = await dispatch(
+      createQuestion({
+        quiz: quizId,
+        question_type: type,
+        text: questionText.trim(),
+      })
+    ).unwrap();
+
+    // 2) Crea respuestas según tipo
+    if (type === "multiple_choice" || type === "true_false") {
+      const answers = options.map((text, idx) => ({
+        question: created.id,
+        text: text.trim(),
+        correct: !!correctAnswers[idx],
+      }));
+      await Promise.all(
+        answers.map((a) => dispatch(createAnswer(a)).unwrap())
+      );
+    } else {
+      // fill_in_the_blank
+      await dispatch(
+        createAnswer({
+          question: created.id,
+          text: answerText.trim(),
+          correct: true,
+        })
+      ).unwrap();
+    }
+  }, [dispatch, quizId, type, questionText, options, correctAnswers, answerText]);
+
+  // Registrar / desregistrar con el padre
+  React.useEffect(() => {
+    onRegister(id, saveFn);
+    return () => onUnregister(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id, saveFn]); // registrar de nuevo si cambia el contenido
 
   return (
-    <div className="border border-gray-200 rounded p-4 mb-4 w-full">
+    <div>
       <input
         type="text"
-        placeholder="Escribe tu pregunta aquí"
+        placeholder="Escribe tu pregunta…"
         value={questionText}
-        onChange={(e) => setQuestion(e.target.value)}
-        className="block w-full border-b border-gray-300 mb-4 focus:outline-none placeholder-shown:border-gray-500 peer h-full w-full rounded-[7px]  !border  !border-gray-300 border-t-transparent bg-transparent bg-white px-3 py-2.5 font-sans text-sm font-normal text-blue-gray-700  shadow-lg shadow-gray-900/5 outline outline-0 ring-4 ring-transparent transition-all placeholder:text-gray-500 placeholder-shown:border placeholder-shown:border-blue-gray-200 placeholder-shown:border-t-blue-gray-200 focus:border-2  focus:!border-gray-900 focus:border-t-transparent focus:!border-t-gray-900 focus:outline-0 focus:ring-gray-900/10 disabled:border-0 disabled:bg-blue-gray-50 block p-2.5 w-full text-sm text-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+        onChange={(e) => setQuestionText(e.target.value)}
+        className="mb-4 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-black shadow-sm outline-none ring-indigo-100 focus:ring-2"
       />
+
       {type === "true_false" && (
-        <div className="flex flex-wrap">
-        <div className="flex items-center me-4">
-            <label htmlFor="true" className="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300 mr-3">
-                <input checked={correctAnswers[0]} id="true" type="radio" value="true" name="trueFalse" className="w-4 h-4 text-purple-600 bg-gray-100 border-gray-300 focus:ring-purple-500 dark:focus:ring-purple-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600 mr-1" onChange={() => handleRadioChange("true")}/>
-                True
-            </label>
-            <label htmlFor="false" className="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">
-                <input checked={correctAnswers[1]} id="false" type="radio" value="false" name="trueFalse" className="w-4 h-4 text-purple-600 bg-gray-100 border-gray-300 focus:ring-purple-500 dark:focus:ring-purple-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600 mr-1" onChange={() => handleRadioChange("false")}
-                />
-                False
-            </label>
+        <div className="flex gap-6 text-black">
+          <label className="inline-flex items-center gap-2">
+            <input
+              checked={correctAnswers[0]}
+              type="radio"
+              value="true"
+              name={`tf-${id}`}
+              onChange={() => handleRadioChange("true")}
+            />
+            Verdadero
+          </label>
+          <label className="inline-flex items-center gap-2">
+            <input
+              checked={correctAnswers[1]}
+              type="radio"
+              value="false"
+              name={`tf-${id}`}
+              onChange={() => handleRadioChange("false")}
+            />
+            Falso
+          </label>
         </div>
-        </div>
-        )}
+      )}
+
       {type === "multiple_choice" && (
-        <div>
-          {options.map((option, index) => (
-            <div key={index} className="flex items-center mb-2">
+        <div className="space-y-2 text-black">
+          {options.map((opt, idx) => (
+            <div key={idx} className="flex items-center gap-2">
               <input
                 type="text"
-                placeholder={`Opción ${index + 1}`}
-                value={option}
-                onChange={(e) => handleChangeOption(index, e.target.value)}
-                className="block p-2.5 w-full text-sm text-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                placeholder={`Opción ${idx + 1}`}
+                value={opt}
+                onChange={(e) => handleChangeOption(idx, e.target.value)}
+                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 shadow-sm outline-none ring-indigo-100 focus:ring-2"
               />
               <input
                 type="checkbox"
-                checked={correctAnswers[index]}
-                className="ml-2"
-                onChange={() => handleSelectCorrectAnswer(index)}
+                checked={!!correctAnswers[idx]}
+                onChange={() => handleSelectCorrectAnswer(idx)}
+                title="Correcta"
               />
-              {index > 1 && (
+              {idx > 1 && (
                 <button
                   type="button"
-                  onClick={() => handleRemoveOption(index)}
-                  className="text-red-500 focus:outline-none"
+                  onClick={() => handleRemoveOption(idx)}
+                  className="rounded bg-rose-50 px-2 py-1 text-sm text-rose-700 hover:bg-rose-100"
                 >
-                  X
+                  Quitar
                 </button>
               )}
             </div>
@@ -188,7 +205,7 @@ const handleSaveQuestion = () => {
           <button
             type="button"
             onClick={addOption}
-            className="bg-blue-500 text-white px-2 py-1 rounded mt-2"
+            className="rounded bg-indigo-600 px-3 py-1 text-sm font-semibold text-white hover:bg-indigo-700"
           >
             Agregar opción
           </button>
@@ -196,11 +213,24 @@ const handleSaveQuestion = () => {
       )}
 
       {type === "fill_in_the_blank" && (
-        <textarea id="message" rows={4} className="block p-2.5 w-full text-sm text-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" placeholder="Escriba su respuesta aqui" value={answerText} onChange={(e) => setAnswerText(e.target.value)}></textarea>
-        )}
-        <button onClick={onDelete} className="text-red-500 p-1 rounded-full hover:bg-gray-200 focus:outline-none">
-        X
+        <textarea
+          rows={3}
+          placeholder="Escribe la respuesta esperada…"
+          value={answerText}
+          onChange={(e) => setAnswerText(e.target.value)}
+          className="mt-2 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-black shadow-sm outline-none ring-indigo-100 focus:ring-2"
+        />
+      )}
+
+      <div className="mt-4">
+        <button
+          type="button"
+          onClick={onDelete}
+          className="rounded-lg bg-rose-50 px-3 py-1.5 text-rose-700 hover:bg-rose-100"
+        >
+          Eliminar pregunta
         </button>
+      </div>
     </div>
   );
 };

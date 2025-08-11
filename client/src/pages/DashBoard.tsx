@@ -50,7 +50,7 @@ const Dashboard: React.FC = () => {
   useEffect(() => {
     if (!userInfo?.username) return;
     dispatch(checkStaff({ username: userInfo.username }));
-    dispatch(getUserReports({ username: userInfo.username }))
+    dispatch(getUserReports(userInfo.username))
       .then((result: any) => {
         setReportCount(result.payload?.length ?? 0);
       });

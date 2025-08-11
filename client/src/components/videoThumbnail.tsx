@@ -1,65 +1,79 @@
-import React, { useState } from "react";
+import React from "react";
 import ReactPlayer from "react-player";
+import { useDispatch } from "react-redux";
 import { updateViews, updateStars, removeVideo } from "../features/videos/videosSlice";
-import { useDispatch } from 'react-redux';
+import type { AppDispatch } from "../app/store";
+import type { IVideo } from "../features/videos/types";
 import RatingStars from "./ratingStars";
 
-function VideoThumbnail( { video } )
-{
-  const dispatch = useDispatch();
-  const [viewsUpdated, setViewsUpdated] = useState(false);
-  const [videoEnded, setVideoEnded] = useState( false );
-  const [showRating, setShowRating] = useState( false ); 
+type Props = {
+  video: IVideo;
+  onViewed?: (video: IVideo) => void;
+  onRated?: (rating: number, video: IVideo) => void;
+};
 
-  const handleVideoView = async () => {
-    if (!viewsUpdated) {
-      try {
-        await dispatch(updateViews({ id: video.id }));
-        console.log("Vistas del video actualizadas correctamente");
-        setViewsUpdated(true);
-      } catch (error) {
-        console.error("Error actualizando las vistas del video:", error);
-      }
-    }
-  };
+const VideoThumbnail: React.FC<Props> = ({ video, onViewed, onRated }) => {
+  const dispatch = useDispatch<AppDispatch>();
 
-  const handleVideoEnded = () => {
-    setVideoEnded(true); 
-    setShowRating( true );
-  };
+  const [viewsUpdated, setViewsUpdated] = React.useState(false);
+  const [showRating, setShowRating] = React.useState(false);
 
-  const handleRateVideo = async (rating) => {
+  // Sube la vista al primer play (no en click del contenedor)
+  const handleFirstPlay = async () => {
+    if (viewsUpdated) return;
     try {
-
-      await dispatch(updateStars({ id: video.id, star: rating }));
-      console.log("Estrellas del video actualizadas correctamente");
-      setShowRating( false );
-      await dispatch(removeVideo({id: video.id}));
-    } catch ( error )
-    {
-      console.error("Error actualizando las estrellas del video:", error);
+      await dispatch(updateViews({ id: video.id, views: (video.views ?? 0) + 1 })).unwrap();
+      setViewsUpdated(true);
+      onViewed?.(video);
+    } catch (err) {
+      // no bloquea UX
+      console.error("No se pudo actualizar vistas:", err);
     }
   };
 
-  const handleClose = () => {
-    setShowRating(false);
+  const handleEnded = () => setShowRating(true);
+
+  const handleRateVideo = async (rating: number) => {
+    try {
+      await dispatch(updateStars({ id: video.id, stars: rating })).unwrap();
+      setShowRating(false);
+      onRated?.(rating, video);
+      // Si este flujo corresponde a “revisión del usuario” y luego se oculta:
+      await dispatch(removeVideo({ id: video.id })).unwrap();
+    } catch (err) {
+      console.error("No se pudo actualizar estrellas:", err);
+    }
   };
 
   return (
-    <div className="video-thumbnail" style={{ width: '300px', marginBottom: '20px' }}
-      onClick={handleVideoView}>
-      <ReactPlayer
-        url={video.url}
-        width="100%" 
-        height="auto" 
-        light={true} 
-        onEnded={handleVideoEnded} 
-      />
-      <h3>{video.title}</h3>
-      {showRating && <RatingStars onRate={handleRateVideo} onClose={handleClose} />}
-    </div>
+    <div className="w-full max-w-sm">
+      <div className="overflow-hidden rounded-xl shadow ring-1 ring-slate-200"
+        onClick={(e) => e.stopPropagation()}
+        onMouseDown={(e) => e.stopPropagation()}
+        onPointerDown={(e) => e.stopPropagation()}
+        onPointerDownCapture={(e) => e.stopPropagation()}
+      >
+        <ReactPlayer
+          url={video.url}
+          width="100%"
+          height="auto"
+          controls
+          light
+          onPlay={handleFirstPlay}
+          onEnded={handleEnded}
+        />
+      </div>
+      <h3 className="mt-2 line-clamp-2 text-sm font-semibold text-slate-800">{video.title}</h3>
+
+      {
+        showRating && (
+          <div className="mt-2">
+            <RatingStars onRate={handleRateVideo} onClose={() => setShowRating(false)} />
+          </div>
+        )
+      }
+    </div >
   );
-}
+};
 
 export default VideoThumbnail;
-

@@ -1,118 +1,213 @@
-
-import React, { useState, useEffect, useRef } from "react";
-import Question from "../../components/question";
-import { Link, useNavigate, useLocation } from "react-router-dom";
+import React from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { toast } from "react-hot-toast";
-import { useDispatch, useSelector } from 'react-redux'
- import { RootState } from '../../app/store'; 
-import { updateNumberQuestions, reset, deleteQuestions,fetchQuizById } from '../../features/quiz/quizSlice'
-import { updateNotificationCount, addNotification } from "../../features/notificationSlice";
 
-export function UpdateQuestionsPage() {
-  const navigate = useNavigate()
-  const dispatch = useDispatch()
-  const location = useLocation()
-  const id = location.state?.id
-  const { quizIsError, quizIsSuccess, quizIsLoading, quizMessage, quiz } = useSelector((state: RootState) => state.quiz);
-  const [questions, setQuestions] = useState([{ id: 1, type: "true_false" }]); 
-  const [selectedType, setSelectedType] = useState( "true_false" );
-  const [saveQuestion, setSaveQuestion] = useState(false); 
-  const {notificationCount} = useSelector((state: RootState) => state.notifications)
-  const [quizFinished, setQuizFinished] = useState(false); // Nueva variable de estado
+import type { RootState, AppDispatch } from "../../app/store";
+import {
+  deleteQuestions,
+  getQuizById,
+  updateNumberQuestions,
+  reset,
+} from "../../features/quiz/quizSlice";
+import { addNotification } from "../../features/notificationSlice";
+import Question from "../../components/question"; // versión refactor con onRegister/onUnregister
+import type { QuestionType } from "../../features/quiz/types";
 
+type LocationState = { id?: number };
 
-  const addQuestion = () => {
-  const newQuestionId = questions.length + 1;
-    setQuestions([...questions, { id: newQuestionId, type: selectedType }]);
-  };
+type Draft = { id: number; type: QuestionType };
 
-  const handleTypeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setSelectedType(e.target.value);
-  };
+const UpdateQuestionsPage: React.FC = () => {
+  const dispatch = useDispatch<AppDispatch>();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { id: quizId } = (location.state || {}) as LocationState;
 
-  const removeQuestion = (id: number) => {
-    const updatedQuestions = questions.filter((question) => question.id !== id);
-    setQuestions(updatedQuestions);
-  };
+  const { quiz, isLoading, isError, message } = useSelector(
+    (s: RootState) => s.quiz
+  );
 
-  const handleFinishQuiz = () => {
-    if (questions.length === 0) {
-      toast.error("Debes agregar al menos una pregunta antes de guardar el quiz.");
-    } else {
-      setSaveQuestion(true);
-      setQuizFinished(true); // Marcar el quiz como finalizado al hacer clic en el botón
+  // listado local de “bloques” de preguntas a crear
+  const [drafts, setDrafts] = React.useState<Draft[]>([
+    { id: 1, type: "true_false" },
+  ]);
+  const [typeToAdd, setTypeToAdd] = React.useState<QuestionType>("true_false");
 
+  // cada Question registra su “save function”
+  const saveFnsRef = React.useRef<Map<number, () => Promise<void>>>(new Map());
+
+  // Carga inicial: si hay id, borra preguntas previas y trae metadata del quiz
+  React.useEffect(() => {
+    if (!quizId) {
+      toast.error("No se encontró el ID del quiz.");
+      navigate("/renderReports");
+      return;
     }
-  };
-
-
-  useEffect(() => {
-    if (quizFinished && quizIsSuccess) {
-      const quizData = {
-        id: quiz.id,
-        questions: questions.length
+    (async () => {
+      try {
+        await dispatch(deleteQuestions(quizId)).unwrap();
+        await dispatch(getQuizById(quizId)).unwrap();
+      } catch (err) {
+        // no bloqueamos la vista; se manejará con flags globales si aplica
+        console.error(err);
       }
-      dispatch(updateNumberQuestions(quizData));
-      dispatch(addNotification("Se ha subido un nuevo cuestionario"));
-      toast.success("Se ha subido el video y el cuestionario correctamente, se notificará al moderador")
-      navigate("/dashboard");
+    })();
+
+    return () => {
+      dispatch(reset());
+    };
+  }, [dispatch, navigate, quizId]);
+
+  // Feedback de error global
+  React.useEffect(() => {
+    if (isError && message) toast.error(message);
+  }, [isError, message]);
+
+  // Helpers para manejar el listado local
+  const addQuestion = () => {
+    const nextId = drafts.length ? Math.max(...drafts.map((d) => d.id)) + 1 : 1;
+    setDrafts([...drafts, { id: nextId, type: typeToAdd }]);
+  };
+
+  const removeDraft = (id: number) => {
+    setDrafts((prev) => prev.filter((d) => d.id !== id));
+    saveFnsRef.current.delete(id);
+  };
+
+  const register = (id: number, fn: () => Promise<void>) => {
+    saveFnsRef.current.set(id, fn);
+  };
+
+  const unregister = (id: number) => {
+    saveFnsRef.current.delete(id);
+  };
+
+  const finishQuiz = async () => {
+    if (!quizId) return;
+    if (drafts.length === 0) {
+      toast.error("Agrega al menos una pregunta.");
+      return;
     }
-    dispatch(reset())
-  }, [quizIsSuccess, quizFinished]);
 
+    try {
+      // Ejecutar todas las guardas registradas
+      const fns = Array.from(saveFnsRef.current.values());
+      await Promise.all(fns.map((fn) => fn()));
 
-  useEffect(() => {
-    dispatch(deleteQuestions({id:id}))
-    dispatch(fetchQuizById(id))
-    dispatch(reset())
-  }, [id])
-  
+      await dispatch(
+        updateNumberQuestions({ id: quizId, questions: drafts.length })
+      ).unwrap();
 
-
+      dispatch(addNotification("Se actualizó un cuestionario"));
+      toast.success(
+        "Cuestionario actualizado correctamente. Se notificará al moderador."
+      );
+      navigate("/dashboard");
+    } catch (err) {
+      console.error(err);
+      toast.error("No se pudieron guardar las preguntas.");
+    } finally {
+      dispatch(reset());
+    }
+  };
 
   return (
-    <div className="container mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-4">{quiz?.title}</h1>
-      <h2 className="text-2xl font-bold mb-4">Agregar Preguntas</h2>
-
-      {questions.map((question) => (
-        <div key={question.id} className="flex items-center mb-4">
-          <Question
-            key={question.type}
-            type={question.type}
-            onDelete={() => removeQuestion( question.id )}
-            quizId={quiz?.id}
-            saveQuestion={saveQuestion}
-          />
+    <div className="mx-auto w-full max-w-5xl px-4 py-6">
+      <div className="mb-6 flex items-center justify-between">
+        <div>
+          <h1 className="text-xl font-bold text-indigo-900">
+            {quiz?.title ?? "Editar cuestionario"}
+          </h1>
+          <p className="mt-1 text-sm text-slate-600">
+            Reconstruye las preguntas del quiz. Total: {drafts.length}
+          </p>
         </div>
-      ))}
+        <Link
+          to="/renderReports"
+          className="rounded-lg bg-indigo-100 px-3 py-2 text-sm font-semibold text-indigo-800 hover:bg-indigo-200"
+        >
+          Volver
+        </Link>
+      </div>
 
-      <div className="flex flex-col items-center">
-        <div className="flex flex-col w-full max-w-md mb-4">
-          <select
-            id="type"
-            value={selectedType}
-            onChange={handleTypeChange}
-            className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-         >
-            <option value="true_false">Verdadero o Falso</option>
-            <option value="multiple_choice">Opción Múltiple</option>
-            <option value="fill_in_the_blank">Pregunta Abierta</option>
-          </select>
-        </div>
+      {/* Selector para el tipo de la siguiente pregunta */}
+      <div className="mb-4 flex flex-wrap items-center gap-3">
+        <select
+          value={typeToAdd}
+          onChange={(e) => setTypeToAdd(e.target.value as QuestionType)}
+          className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm outline-none ring-indigo-100 focus:ring-2"
+        >
+          <option value="true_false">Verdadero/Falso</option>
+          <option value="multiple_choice">Opción múltiple</option>
+          <option value="fill_in_the_blank">Completar</option>
+        </select>
+
         <button
+          type="button"
           onClick={addQuestion}
-          className="bg-blue-500 text-white px-2 py-1 rounded mb-4"
+          className="rounded-lg bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow hover:bg-indigo-700"
         >
-          Agregar Pregunta
+          Agregar pregunta
         </button>
+      </div>
+
+      {/* Editor de preguntas */}
+      <div className="grid grid-cols-1 gap-6">
+        {drafts.map((d) => (
+          <div
+            key={d.id}
+            className="rounded-2xl bg-white p-4 shadow ring-1 ring-slate-200"
+          >
+            <div className="mb-3 flex items-center justify-between">
+              <span className="text-sm font-medium text-slate-700">
+                Pregunta #{d.id} —{" "}
+                {d.type === "true_false"
+                  ? "V/F"
+                  : d.type === "multiple_choice"
+                    ? "Múltiple"
+                    : "Completar"}
+              </span>
+              <button
+                type="button"
+                onClick={() => {
+                  removeDraft(d.id);
+                  unregister(d.id);
+                }}
+                className="rounded-lg bg-rose-50 px-2 py-1 text-sm font-medium text-rose-700 hover:bg-rose-100"
+              >
+                Quitar
+              </button>
+            </div>
+
+            <Question
+              id={d.id}
+              type={d.type}
+              quizId={quizId!}
+              onDelete={() => {
+                removeDraft(d.id);
+                unregister(d.id);
+              }}
+              onRegister={register}
+              onUnregister={unregister}
+            />
+          </div>
+        ))}
+      </div>
+
+      {/* Acciones finales */}
+      <div className="mt-6 flex justify-center gap-3">
         <button
-          className="bg-blue-500 text-white px-2 py-1 rounded"
-          onClick={handleFinishQuiz}
+          type="button"
+          onClick={finishQuiz}
+          disabled={drafts.length === 0}
+          className="rounded-lg bg-emerald-600 px-4 py-2 font-semibold text-white shadow hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
         >
-         Terminar Quiz 
+          {"Terminar y guardar"}
         </button>
       </div>
     </div>
   );
-}
+};
+
+export default UpdateQuestionsPage;

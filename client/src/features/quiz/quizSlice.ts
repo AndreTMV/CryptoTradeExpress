@@ -1,530 +1,345 @@
-import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
-import quizService from './quizService';
+import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
+import quizService from "./quizService";
+import {
+  IAnswer,
+  IQuestion,
+  IQuiz,
+  IReport,
+  IRenderedQuiz,
+  QuizStatus,
+} from "./types";
+
+type Reject = string;
 
 interface QuizState {
-    quiz: any;
-    question: any,
-    answer: any,
-    report: any,
-    quizIsError: boolean;
-    quizIsSuccess: boolean;
-    quizIsLoading: boolean;
-    quizMessage: string;
-    allQuizzesLoaded: boolean;
+  quizzes: IQuiz[];
+  quiz: IQuiz | null;
+  rendered: IRenderedQuiz | null;
+
+  reports: IReport[];
+
+  isLoading: boolean;
+  isSuccess: boolean;
+  isError: boolean;
+  message: string | null;
 }
 
 const initialState: QuizState = {
-    quiz: {},
-    question: {},
-    answer: {},
-    report:{},
-    quizIsError: false,
-    quizIsSuccess: false,
-    quizIsLoading: false,
-    quizMessage: '',
-    allQuizzesLoaded: false,
+  quizzes: [],
+  quiz: null,
+  rendered: null,
+
+  reports: [],
+
+  isLoading: false,
+  isSuccess: false,
+  isError: false,
+  message: null,
 };
 
-export const createQuiz = createAsyncThunk(
-    "quiz/createQuiz",
-    async (quizData: any, thunkAPI) => {
-        try {
-            return await quizService.createQuiz(quizData)
-        } catch (error) {
-            const message = (error.response && error.response.data
-                && error.response.data.message) ||
-                error.message || error.toString()
-
-            return thunkAPI.rejectWithValue(message)
-        }
+/* ===================== Thunks ===================== */
+export const createQuiz = createAsyncThunk<IQuiz, Partial<IQuiz>, { rejectValue: Reject }>(
+  "quiz/createQuiz",
+  async (payload, thunkAPI) => {
+    try {
+      return await quizService.createQuiz(payload);
+    } catch (e: any) {
+      return thunkAPI.rejectWithValue(e.response?.data?.message || e.message || "Error al crear quiz");
     }
-)
-
-export const createQuestion = createAsyncThunk(
-    "quiz/createQuestion",
-    async (questionData: any, thunkAPI) => {
-        try {
-            return await quizService.createQuestion(questionData)
-        } catch (error) {
-            const message = (error.response && error.response.data
-                && error.response.data.message) ||
-                error.message || error.toString()
-
-            return thunkAPI.rejectWithValue(message)
-        }
-    }
-)
-
-export const createAnswer = createAsyncThunk(
-    "quiz/createAnswer",
-    async (answerData: any, thunkAPI) => {
-        try {
-            return await quizService.createAnswer(answerData)
-        } catch (error) {
-            const message = (error.response && error.response.data
-                && error.response.data.message) ||
-                error.message || error.toString()
-
-            return thunkAPI.rejectWithValue(message)
-        }
-    }
-)
-
-export const updateNumberQuestions = createAsyncThunk(
-    "quiz/updateNumberQuestions",
-    async ( quizData: any, thunkAPI ) =>
-    {
-        try
-        {
-            return await quizService.updateNumberQuestions(quizData)
-        } catch ( error )
-        {
-            const message = (error.response && error.response.data
-                && error.response.data.message) ||
-                error.message || error.toString()
-
-            return thunkAPI.rejectWithValue(message)
-        }
-    }
-)
-
-export const renderQuiz = createAsyncThunk(
-    "quiz/renderQuiz",
-    async ( quizData: any, thunkAPI ) =>
-    {
-        try
-        {
-            return await quizService.renderQuiz(quizData)
-        } catch ( error )
-        {
-            const message = (error.response && error.response.data
-                && error.response.data.message) ||
-                error.message || error.toString()
-
-            return thunkAPI.rejectWithValue(message)
-        }
-    }
-)
-
-export const getQuiz = createAsyncThunk(
-    "quiz/getQuiz",
-    async ( videoData: any, thunkAPI ) =>
-    {
-        try
-        {
-            return await quizService.getQuiz(videoData)
-        } catch ( error )
-        {
-            const message = (error.response && error.response.data
-                && error.response.data.message) ||
-                error.message || error.toString()
-
-            return thunkAPI.rejectWithValue(message)
-        }
-    }
-)
-
-export const updateQuizStatus = createAsyncThunk(
-    "quiz/updateQuizStatus",
-    async ( quizData: any, thunkAPI ) =>
-    {
-        try
-        {
-            return await quizService.updateQuizStatus(quizData)
-        } catch ( error )
-        {
-            const message = (error.response && error.response.data
-                && error.response.data.message) ||
-                error.message || error.toString()
-
-            return thunkAPI.rejectWithValue(message)
-        }
-    }
-)
-
-export const getAllQuizzes = createAsyncThunk(
-    "quiz/getQuizzes",
-    async ( thunkAPI ) =>
-    {
-        try
-        {
-            return await quizService.getAllQuizzes()
-        } catch ( error )
-        {
-            const message = (error.response && error.response.data
-                && error.response.data.message) ||
-                error.message || error.toString()
-
-            return thunkAPI.rejectWithValue(message)
-        }
-    }
-)
-export const createReport = createAsyncThunk(
-    "quiz/createReport",
-    async (reportData: any, thunkAPI) => {
-        try {
-            return await quizService.createReport(reportData)
-        } catch (error) {
-            const message = (error.response && error.response.data
-                && error.response.data.message) ||
-                error.message || error.toString()
-
-            return thunkAPI.rejectWithValue(message)
-        }
-    }
-)
-
-export const deleteReport = createAsyncThunk(
-    "videos/deleteReport",
-    async (reportData, thunkAPI) => {
-        try {
-            const id = reportData.id;
-            return await quizService.deleteReport(id)
-        } catch (error) {
-            const message = (error.response && error.response.data
-                && error.response.data.message) ||
-                error.message || error.toString()
-
-            return thunkAPI.rejectWithValue(message)
-        }
-    }
-)
-
-export const getAllReports = createAsyncThunk(
-    "quiz/getAllReports",
-    async ( thunkAPI ) =>
-    {
-        try
-        {
-            return await quizService.getAllReports()
-        } catch ( error )
-        {
-            const message = (error.response && error.response.data
-                && error.response.data.message) ||
-                error.message || error.toString()
-
-            return thunkAPI.rejectWithValue(message)
-        }
-    }
-)
-
-export const getUserReports = createAsyncThunk(
-    "quiz/getUserReports",
-    async ( userData: any, thunkAPI ) =>
-    {
-        try
-        {
-            return await quizService.getUserReports(userData)
-        } catch ( error )
-        {
-            const message = (error.response && error.response.data
-                && error.response.data.message) ||
-                error.message || error.toString()
-
-            return thunkAPI.rejectWithValue(message)
-        }
-    }
-)
-export const getQuizReport = createAsyncThunk(
-    "quiz/getQuizReport",
-    async (reportData, thunkAPI) => {
-        try {
-            const id = reportData.id;
-            return await quizService.getQuizReport(id)
-        } catch (error) {
-            const message = (error.response && error.response.data
-                && error.response.data.message) ||
-                error.message || error.toString()
-
-            return thunkAPI.rejectWithValue(message)
-        }
-    }
-)
-
-export const deleteQuestions = createAsyncThunk(
-    "quiz/deleteQuestions",
-    async ( quizData, thunkAPI ) =>
-    { 
-        try
-        {
-            const id = quizData.id
-            return await quizService.deleteQuestions(id)
-        } catch ( error )
-        {
-            const message = (error.response && error.response.data
-                && error.response.data.message) ||
-                error.message || error.toString()
-
-            return thunkAPI.rejectWithValue(message)
-        }
-    }
-)
-
-export const fetchQuizById = createAsyncThunk(
-    "quiz/fetchQuizById",
-    async (quizId: number, thunkAPI) => {
-        try {
-            return await quizService.getQuizById(quizId);
-        } catch (error) {
-            const message = (error.response && error.response.data &&
-                error.response.data.message) || error.message || error.toString();
-
-            return thunkAPI.rejectWithValue(message);
-        }
-    }
+  }
 );
 
+export const renderQuiz = createAsyncThunk<IRenderedQuiz, number, { rejectValue: Reject }>(
+  "quiz/renderQuiz",
+  async (quizId, thunkAPI) => {
+    try {
+      return await quizService.renderQuiz(quizId);
+    } catch (e: any) {
+      return thunkAPI.rejectWithValue(e.response?.data?.message || e.message || "Error al renderizar quiz");
+    }
+  }
+)
+
+export const getAllQuizzes = createAsyncThunk<IQuiz[], void, { rejectValue: Reject }>(
+  "quiz/getAll",
+  async (_, thunkAPI) => {
+    try {
+      return await quizService.getAllQuizzes();
+    } catch (e: any) {
+      return thunkAPI.rejectWithValue(e.response?.data?.message || e.message || "Error al cargar quizes");
+    }
+  }
+);
+
+export const getQuizById = createAsyncThunk<IQuiz, number, { rejectValue: Reject }>(
+  "quiz/getById",
+  async (id, thunkAPI) => {
+    try {
+      return await quizService.getQuizById(id);
+    } catch (e: any) {
+      return thunkAPI.rejectWithValue(e.response?.data?.message || e.message || "Error al obtener quiz");
+    }
+  }
+);
+
+export const getQuizByVideo = createAsyncThunk<{ id: number }, number, { rejectValue: Reject }>(
+  "quiz/getByVideo",
+  async (videoId, thunkAPI) => {
+    try {
+      return await quizService.getQuizByVideo(videoId);
+    } catch (e: any) {
+      return thunkAPI.rejectWithValue(e.response?.data?.message || e.message || "Error al buscar quiz por video");
+    }
+  }
+);
+
+export const updateQuizStatus = createAsyncThunk<
+  { status: string; message: string; id: number; state: QuizStatus },
+  { id: number; state: QuizStatus },
+  { rejectValue: Reject }
+>("quiz/updateStatus", async (payload, thunkAPI) => {
+  try {
+    const res = await quizService.updateQuizStatus(payload);
+    return { ...res, ...payload };
+  } catch (e: any) {
+    return thunkAPI.rejectWithValue(e.response?.data?.message || e.message || "Error al actualizar estado");
+  }
+});
+
+export const updateNumberQuestions = createAsyncThunk<
+  { status: string; message: string; id: number; questions: number },
+  { id: number; questions: number },
+  { rejectValue: Reject }
+>("quiz/updateNumQuestions", async (payload, thunkAPI) => {
+  try {
+    const res = await quizService.updateNumberQuestions(payload);
+    return { ...res, ...payload };
+  } catch (e: any) {
+    return thunkAPI.rejectWithValue(e.response?.data?.message || e.message || "Error al actualizar preguntas");
+  }
+});
+
+export const deleteQuestions = createAsyncThunk<
+  { status: string; message: string; quizId: number },
+  number,
+  { rejectValue: Reject }
+>("quiz/deleteQuestions", async (quizId, thunkAPI) => {
+  try {
+    const res = await quizService.deleteQuestions(quizId);
+    return { ...res, quizId };
+  } catch (e: any) {
+    return thunkAPI.rejectWithValue(e.response?.data?.message || e.message || "Error al borrar preguntas");
+  }
+});
+
+export const createQuestion = createAsyncThunk<IQuestion, Partial<IQuestion>, { rejectValue: Reject }>(
+  "quiz/createQuestion",
+  async (payload, thunkAPI) => {
+    try {
+      return await quizService.createQuestion(payload);
+    } catch (e: any) {
+      return thunkAPI.rejectWithValue(e.response?.data?.message || e.message || "Error al crear pregunta");
+    }
+  }
+);
+
+export const createAnswer = createAsyncThunk<IAnswer, Partial<IAnswer>, { rejectValue: Reject }>(
+  "quiz/createAnswer",
+  async (payload, thunkAPI) => {
+    try {
+      return await quizService.createAnswer(payload);
+    } catch (e: any) {
+      return thunkAPI.rejectWithValue(e.response?.data?.message || e.message || "Error al crear respuesta");
+    }
+  }
+);
+
+export const createReport = createAsyncThunk<IReport, Partial<IReport>, { rejectValue: Reject }>(
+  "quiz/createReport",
+  async (payload, thunkAPI) => {
+    try {
+      return await quizService.createReport(payload);
+    } catch (e: any) {
+      return thunkAPI.rejectWithValue(e.response?.data?.message || e.message || "Error al crear reporte");
+    }
+  }
+);
+
+export const deleteReport = createAsyncThunk<number, number, { rejectValue: Reject }>(
+  "quiz/deleteReport",
+  async (id, thunkAPI) => {
+    try {
+      await quizService.deleteReport(id);
+      return id;
+    } catch (e: any) {
+      return thunkAPI.rejectWithValue(e.response?.data?.message || e.message || "Error al eliminar reporte");
+    }
+  }
+);
+
+export const getAllReports = createAsyncThunk<IReport[], void, { rejectValue: Reject }>(
+  "quiz/getAllReports",
+  async (_, thunkAPI) => {
+    try {
+      return await quizService.getAllReports();
+    } catch (e: any) {
+      return thunkAPI.rejectWithValue(e.response?.data?.message || e.message || "Error al cargar reportes");
+    }
+  }
+);
+
+export const getUserReports = createAsyncThunk<IReport[], string, { rejectValue: Reject }>(
+  "quiz/getUserReports",
+  async (username, thunkAPI) => {
+    try {
+      return await quizService.getUserReports(username);
+    } catch (e: any) {
+      return thunkAPI.rejectWithValue(e.response?.data?.message || e.message || "Error al cargar reportes de usuario");
+    }
+  }
+);
+
+export const getQuizReport = createAsyncThunk<IReport[], number, { rejectValue: Reject }>(
+  "quiz/getQuizReports",
+  async (reportId: number, thunkAPI) => {
+    try {
+      return await quizService.getQuizReport(reportId);
+    } catch (e: any) {
+      return thunkAPI.rejectWithValue(e.response?.data?.message || e.message || "Error al cargar reportes de quiz");
+    }
+  }
+);
 
 export const quizSlice = createSlice({
-    name: "quiz",
-    initialState,
-    reducers: {
-        reset: (state) => {
-            state.quizIsLoading = false
-            state.quizIsError = false
-            state.quizIsSuccess = false
-            state.quizMessage = ''
-            state.allQuizzesLoaded = false
-        }
+  name: "quiz",
+  initialState,
+  reducers: {
+    reset: (state) => {
+      state.isLoading = false;
+      state.isError = false;
+      state.isSuccess = false;
+      state.message = null;
     },
-    extraReducers: (builder) => {
-        builder
-            .addCase( createQuiz.pending, ( state ) =>
-            {
-                state.quizIsLoading = true
-            })
-            .addCase( createQuiz.fulfilled, ( state, action ) =>
-            {
-                state.quizIsSuccess = true,
-                state.quizIsLoading = false
-                state.quiz = action.payload
-            })
-            .addCase( createQuiz.rejected, ( state, action) =>
-            {
-                state.quizIsError = true,
-                state.quizIsLoading = false,
-                state.quizIsSuccess = false,
-                state.quizMessage = action.payload
-            })
-            .addCase( createQuestion.pending, ( state ) =>
-            {
-                state.quizIsLoading = true
-            })
-            .addCase( createQuestion.fulfilled, ( state, action ) =>
-            {
-                state.quizIsSuccess = true,
-                state.quizIsLoading = false
-                state.question = action.payload
-            })
-            .addCase( createQuestion.rejected, ( state, action) =>
-            {
-                state.quizIsError = true,
-                state.quizIsLoading = false,
-                state.quizIsSuccess = false,
-                state.quizMessage = action.payload
-            })
-            .addCase( createAnswer.pending, ( state ) =>
-            {
-                state.quizIsLoading = true
-            })
-            .addCase( createAnswer.fulfilled, ( state, action ) =>
-            {
-                state.quizIsSuccess = true,
-                state.quizIsLoading = false
-                state.answer = action.payload
-            })
-            .addCase( createAnswer.rejected, ( state, action) =>
-            {
-                state.quizIsError = true,
-                state.quizIsLoading = false,
-                state.quizIsSuccess = false,
-                state.quizMessage = action.payload
-            })
-            .addCase(updateNumberQuestions.pending, (state) => {
-                state.quizIsLoading = true
-            })
-            .addCase(updateNumberQuestions.fulfilled, (state) => {
-                state.quizIsLoading = false
-                state.quizIsSuccess = true
-            })
-            .addCase(updateNumberQuestions.rejected, (state, action) => {
-                state.quizIsLoading = false
-                state.quizIsSuccess = false
-                state.quizIsError = true
-                state.quizMessage = action.payload
-            })
-            .addCase( renderQuiz.pending, ( state ) =>
-            {
-                state.quizIsLoading = true
-            })
-            .addCase( renderQuiz.fulfilled, ( state, action ) =>
-            {
-                state.quizIsSuccess = true,
-                state.quizIsLoading = false
-                state.quiz = action.payload
-            })
-            .addCase( renderQuiz.rejected, ( state, action) =>
-            {
-                state.quizIsError = true,
-                state.quizIsLoading = false,
-                state.quizIsSuccess = false,
-                state.quizMessage = action.payload
-            })
-            .addCase( getQuiz.pending, ( state ) =>
-            {
-                state.quizIsLoading = true
-            })
-            .addCase( getQuiz.fulfilled, ( state, action ) =>
-            {
-                state.quizIsSuccess = true,
-                state.quizIsLoading = false
-            })
-            .addCase( getQuiz.rejected, ( state, action) =>
-            {
-                state.quizIsError = true,
-                state.quizIsLoading = false,
-                state.quizIsSuccess = false,
-                state.quizMessage = action.payload
-            })
-            .addCase(updateQuizStatus.pending, (state) => {
-                state.quizIsLoading = true
-            })
-            .addCase(updateQuizStatus.fulfilled, (state) => {
-                state.quizIsLoading = false
-                state.quizIsSuccess = true
-            })
-            .addCase(updateQuizStatus.rejected, (state, action) => {
-                state.quizIsLoading = false
-                state.quizIsSuccess = false
-                state.quizIsError = true
-                state.quizMessage = action.payload
-            })
-            .addCase(getAllQuizzes.pending, (state) => {
-                state.quizIsLoading = true
-            })
-            .addCase(getAllQuizzes.fulfilled, (state, action) => {
-                state.quizIsLoading = false
-                state.allQuizzesLoaded = true
-                state.quiz = action.payload
-            })
-            .addCase(getAllQuizzes.rejected, (state, action) => {
-                state.quizIsLoading = false
-                state.allQuizzesLoaded = false
-                state.quizIsError = true
-                state.quizMessage = action.payload
-            })
-            .addCase( createReport.pending, ( state ) =>
-            {
-                state.quizIsLoading = true
-            })
-            .addCase( createReport.fulfilled, ( state, action ) =>
-            {
-                state.quizIsSuccess = true,
-                state.quizIsLoading = false
-                state.report = action.payload
-            })
-            .addCase( createReport.rejected, ( state, action) =>
-            {
-                state.quizIsError = true,
-                state.quizIsLoading = false,
-                state.quizIsSuccess = false,
-                state.quizMessage = action.payload
-            })
-            .addCase(deleteReport.pending, (state) => {
-                state.quizIsLoading = true
-            })
-            .addCase(deleteReport.fulfilled, (state) => {
-                state.quizIsLoading = false
-                state.quizIsSuccess = true
-            })
-            .addCase(deleteReport.rejected, (state, action) => {
-                state.quizIsLoading = false
-                state.quizIsSuccess = false
-                state.quizIsError = true
-                state.quizMessage = action.payload
-            })
-            .addCase(getAllReports.pending, (state) => {
-                state.quizIsLoading = true
-            })
-            .addCase(getAllReports.fulfilled, (state, action) => {
-                state.quizIsLoading = false
-                state.allQuizzesLoaded = true
-                state.report = action.payload
-            })
-            .addCase(getAllReports.rejected, (state, action) => {
-                state.quizIsLoading = false
-                state.allQuizzesLoaded = false
-                state.quizIsError = true
-                state.quizMessage = action.payload
-            })
-            .addCase( getUserReports.pending, ( state ) =>
-            {
-                state.quizIsLoading = true
-            })
-            .addCase( getUserReports.fulfilled, ( state, action ) =>
-            {
-                state.quizIsSuccess = true,
-                state.quizIsLoading = false
-                state.allQuizzesLoaded = true
-                state.report = action.payload
-            })
-            .addCase( getUserReports.rejected, ( state, action) =>
-            {
-                state.quizIsError = true,
-                state.quizIsLoading = false,
-                state.quizIsSuccess = false,
-                state.allQuizzesLoaded = false
-                state.quizMessage = action.payload
-            })
-            .addCase( getQuizReport.pending, ( state ) =>
-            {
-                state.quizIsLoading = true
-            })
-            .addCase( getQuizReport.fulfilled, ( state, action ) =>
-            {
-                state.quizIsSuccess = true,
-                state.quizIsLoading = false
-            })
-            .addCase( getQuizReport.rejected, ( state, action) =>
-            {
-                state.quizIsError = true,
-                state.quizIsLoading = false,
-                state.quizIsSuccess = false,
-                state.quizMessage = action.payload
-            })
-            .addCase(deleteQuestions.pending, (state) => {
-                state.quizIsLoading = true
-            })
-            .addCase(deleteQuestions.fulfilled, (state) => {
-                state.quizIsLoading = false
-                state.quizIsSuccess = true
-            })
-            .addCase(deleteQuestions.rejected, (state, action) => {
-                state.quizIsLoading = false
-                state.quizIsSuccess = false
-                state.quizIsError = true
-                state.quizMessage = action.payload
-            })
-            .addCase( fetchQuizById.pending, ( state ) =>
-            {
-                state.quizIsLoading = true
-            })
-            .addCase( fetchQuizById.fulfilled, ( state, action ) =>
-            {
-                state.quizIsSuccess = true,
-                state.quizIsLoading = false
-                state.quiz = action.payload
-            })
-            .addCase( fetchQuizById.rejected, ( state, action) =>
-            {
-                state.quizIsError = true,
-                state.quizIsLoading = false,
-                state.quizIsSuccess = false,
-                state.quizMessage = action.payload
-            })
-    }
-})
+    clearRendered: (state) => {
+      state.rendered = null;
+    },
+  },
+  extraReducers: (builder) => {
+    builder
+      // createQuiz
+      .addCase(createQuiz.pending, (s) => {
+        s.isLoading = true;
+      })
+      .addCase(createQuiz.fulfilled, (s, a: PayloadAction<IQuiz>) => {
+        s.isLoading = false;
+        s.isSuccess = true;
+        s.quiz = a.payload;
+        s.quizzes.push(a.payload);
+      })
+      .addCase(createQuiz.rejected, (s, a) => {
+        s.isLoading = false;
+        s.isError = true;
+        s.message = a.payload ?? "Error al crear quiz";
+      })
 
-export const { reset } = quizSlice.actions
+      // getAllQuizzes
+      .addCase(getAllQuizzes.pending, (s) => {
+        s.isLoading = true;
+      })
+      .addCase(getAllQuizzes.fulfilled, (s, a: PayloadAction<IQuiz[]>) => {
+        s.isLoading = false;
+        s.quizzes = a.payload;
+      })
+      .addCase(getAllQuizzes.rejected, (s, a) => {
+        s.isLoading = false;
+        s.isError = true;
+        s.message = a.payload ?? "Error al cargar quizes";
+      })
 
-export default quizSlice.reducer
+      // getQuizById
+      .addCase(getQuizById.fulfilled, (s, a: PayloadAction<IQuiz>) => {
+        s.quiz = a.payload;
+      })
+
+      // status / number questions
+      .addCase(updateQuizStatus.fulfilled, (s, a) => {
+        s.isSuccess = true;
+        const q = s.quizzes.find((x) => x.id === a.payload.id);
+        if (q) q.status = a.payload.state;
+      })
+      .addCase(updateNumberQuestions.fulfilled, (s, a) => {
+        s.isSuccess = true;
+        const q = s.quizzes.find((x) => x.id === a.payload.id);
+        if (q) q.number_of_question = a.payload.questions;
+      })
+
+      // renderQuiz
+      .addCase(renderQuiz.pending, (s) => {
+        s.isLoading = true;
+        s.rendered = null;
+      })
+      .addCase(renderQuiz.fulfilled, (s, a: PayloadAction<IRenderedQuiz>) => {
+        s.isLoading = false;
+        s.rendered = a.payload;
+      })
+      .addCase(renderQuiz.rejected, (s, a) => {
+        s.isLoading = false;
+        s.isError = true;
+        s.message = a.payload ?? "Error al renderizar quiz";
+      })
+
+      // deleteQuestions
+      .addCase(deleteQuestions.fulfilled, (s) => {
+        s.isSuccess = true;
+      })
+
+      // Q&A creation feedback
+      .addCase(createQuestion.fulfilled, (s) => {
+        s.isSuccess = true;
+      })
+      .addCase(createAnswer.fulfilled, (s) => {
+        s.isSuccess = true;
+      })
+
+      // Reports
+      .addCase(createReport.fulfilled, (s, a: PayloadAction<IReport>) => {
+        s.isSuccess = true;
+        s.reports.push(a.payload);
+      })
+      .addCase(deleteReport.fulfilled, (s, a: PayloadAction<number>) => {
+        s.isSuccess = true;
+        s.reports = s.reports.filter((r) => r.id !== a.payload);
+      })
+      .addCase(getAllReports.fulfilled, (s, a: PayloadAction<IReport[]>) => {
+        s.reports = a.payload;
+      })
+      .addCase(getUserReports.fulfilled, (s, a: PayloadAction<IReport[]>) => {
+        s.reports = a.payload;
+      })
+      .addCase(getQuizReport.fulfilled, (s, a: PayloadAction<IReport[]>) => {
+        s.reports = a.payload;
+      })
+
+      // errores genéricos
+      .addMatcher(
+        (action) => action.type.startsWith("quiz/") && action.type.endsWith("/rejected"),
+        (s, a: any) => {
+          s.isLoading = false;
+          s.isError = true;
+          s.message = a.payload ?? "Ocurrió un error";
+        }
+      )
+      .addMatcher(
+        (action) => action.type.startsWith("quiz/") && action.type.endsWith("/pending"),
+        (s) => {
+          s.isLoading = true;
+          s.isError = false;
+          s.isSuccess = false;
+          s.message = null;
+        }
+      );
+  },
+});
+
+export const { reset, clearRendered } = quizSlice.actions;
+export default quizSlice.reducer;

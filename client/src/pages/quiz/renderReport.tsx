@@ -1,111 +1,148 @@
-import { useState, useEffect } from "react";
-import { useDispatch, useSelector } from 'react-redux';
-import { useNavigate } from 'react-router-dom';
-import { RootState } from '../../app/store';
-import QuizResult from "../../components/answerQuiz";
-import quizService from '../../features/quiz/quizService';
-import { reset, deleteReport, getQuizReport, getUserReports} from '../../features/quiz/quizSlice';
+import React from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom";
+import { toast } from "react-hot-toast";
 
-function ReportThumbnails() {
-  const dispatch = useDispatch();
-  const { quizIsError, quizIsSuccess, quizIsLoading, quizMessage, allQuizzesLoaded, report } = useSelector((state: RootState) => state.quiz);
-  const { userInfo } = useSelector((state: RootState) => state.auth);
-  const [reports, setReports] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [quizReports, setQuizReports] = useState([])
+import type { RootState, AppDispatch } from "../../app/store";
+import {
+  getUserReports,
+  getQuizById,
+  deleteReport,
+  reset,
+} from "../../features/quiz/quizSlice";
+import type { IReport, IQuiz } from "../../features/quiz/types";
 
-  async function fetchReports() {
-    try {
-      const userData = {
-        username: userInfo.username,
+const ReportThumbnails: React.FC = () => {
+  const dispatch = useDispatch<AppDispatch>();
+  const navigate = useNavigate();
+
+  const { reports, isLoading, isError, message } = useSelector(
+    (s: RootState) => s.quiz
+  );
+  const { userInfo } = useSelector((s: RootState) => s.auth);
+
+  // cache local de quizzes por id (solo para título/metadata)
+  const [quizMap, setQuizMap] = React.useState<Map<number, IQuiz>>(new Map());
+
+  // Cargar reportes del usuario
+  React.useEffect(() => {
+    if (!userInfo?.username) return;
+    void dispatch(getUserReports(userInfo.username));
+    return () => {
+      dispatch(reset());
+    };
+  }, [dispatch, userInfo?.username]);
+
+  // Feedback de error global
+  React.useEffect(() => {
+    if (isError && message) toast.error(message);
+  }, [isError, message]);
+
+  // Traer títulos de quizzes asociados a los reportes (únicos)
+  React.useEffect(() => {
+    const fetchQuizzes = async () => {
+      const ids = Array.from(new Set(reports.map((r) => r.quiz))).filter(Boolean) as number[];
+      if (!ids.length) {
+        setQuizMap(new Map());
+        return;
       }
-      const reportData = await dispatch(getUserReports(userData));
-      setReports(reportData.payload);
-    } catch (error) {
-      console.error("Error fetching reports:", error);
-    } finally {
-      setLoading(false);
-    }
-  }
-  async function fetchQuizReports() {
-    try {
-      console.log(reports)
-      const promises = reports.map(async (report) => {
-        console.log("Fetching report:", report);
-        const reportData = {
-          id: report.quiz
-        };
-        const quizData = await dispatch(getQuizReport(reportData));
-        console.log("Received quiz data:", quizData);
-        return quizData.payload;
-      });
-      const resolvedQuizReports = await Promise.all(promises);
-      console.log(resolvedQuizReports)
-      setQuizReports(resolvedQuizReports);
-      console.log(quizReports)
-    } catch (error) {
-      console.error("Error fetching quiz reports:", error);
-      // Manejar el error de manera apropiada
-    } finally {
-      setLoading(false);
-    }
-  }
-useEffect(() => {
-  const fetchData = async () => {
-    try {
-      const userData = {
-        username: userInfo.username,
+      try {
+        const results = await Promise.all(ids.map((id) => dispatch(getQuizById(id)).unwrap()));
+        const m = new Map<number, IQuiz>();
+        results.forEach((q) => m.set(q.id, q));
+        setQuizMap(m);
+      } catch (err) {
+        // No bloquea la UI si alguno falla
+        console.error("No se pudieron cargar datos de algunos quizzes:", err);
       }
-      const reportData = await dispatch(getUserReports(userData));
-      setReports(reportData.payload);
-    } catch (error) {
-      console.error("Error fetching reports:", error);
-    } finally {
-      setLoading(false);
+    };
+    void fetchQuizzes();
+  }, [dispatch, reports]);
+
+  const handleDelete = async (reportId: number) => {
+    try {
+      await dispatch(deleteReport(reportId)).unwrap();
+      toast.success("Reporte eliminado");
+    } catch (err) {
+      toast.error("No se pudo eliminar el reporte");
+      console.error(err);
     }
   };
-  fetchData();
-}, [allQuizzesLoaded, dispatch]);
 
-  useEffect(() => {
-    if (reports.length > 0) {
-      fetchQuizReports();
-    }
-  }, [reports]);
+  const handleModify = (quizId: number) => {
+    navigate("/updateQuestions", { state: { id: quizId } });
+  };
 
-  return (
-    <div className="video-thumbnails grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-    {reports.map((report, index) => (
-          <ReportButton key={report.id} reportData={report} quiz={quizReports[index]} />
+  // UI
+  if (isLoading && reports.length === 0) {
+    return (
+      <div className="grid grid-cols-2 gap-4 md:grid-cols-4 lg:grid-cols-6">
+        {Array.from({ length: 8 }).map((_, i) => (
+          <div key={i} className="h-40 animate-pulse rounded-xl bg-slate-200" />
         ))}
-    </div>
-  );
-}
-function ReportButton({ reportData, quiz }) {
-  const navigate = useNavigate();
-  const dispatch = useDispatch();
-  function handleClick() {
-    navigate("/updateQuestions", { state: { id: quiz.id } });
-
+      </div>
+    );
   }
 
-return (
-    <div className="quiz-button bg-white rounded-lg shadow-md p-4 mb-4">
-      <div className="quiz-info">
-        <h3 className="text-xl font-semibold mb-2 text-gray-900">{quiz?.title}</h3>
-        <p className="text-gray-600">{reportData.title}</p>
-        <p className="text-gray-600">{reportData.description}</p>
+  if (!reports.length) {
+    return (
+      <div className="rounded-xl border border-slate-200 bg-white p-8 text-center text-slate-600">
+        No tienes reportes por ahora.
       </div>
-    <button className="btn bg-indigo-500 text-white px-4 py-2 rounded-md mt-4 hover:bg-indigo-700"
-      onClick={() => dispatch(deleteReport({id:reportData.id})) }>
-        Eliminar
-      </button>
-    <button className="btn bg-indigo-500 text-white px-4 py-2 rounded-md mt-4 hover:bg-indigo-700"
-      onClick={handleClick}>
-        Modificar Quiz
-      </button>
+    );
+  }
+
+  return (
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+      {reports.map((report: IReport) => {
+        const quiz = quizMap.get(report.quiz);
+        return (
+          <ReportCard
+            key={report.id}
+            report={report}
+            quizTitle={quiz?.title}
+            onDelete={() => handleDelete(report.id)}
+            onModify={() => handleModify(report.quiz)}
+          />
+        );
+      })}
     </div>
-     );
-}
+  );
+};
+
+type CardProps = {
+  report: IReport;
+  quizTitle?: string;
+  onDelete: () => void;
+  onModify: () => void;
+};
+
+const ReportCard: React.FC<CardProps> = ({ report, quizTitle, onDelete, onModify }) => {
+  return (
+    <div className="flex h-full flex-col rounded-2xl bg-white p-4 shadow ring-1 ring-slate-200">
+      <div className="mb-2">
+        <h3 className="line-clamp-2 text-sm font-semibold text-slate-900">
+          {quizTitle ?? "Quiz"}
+        </h3>
+        <p className="mt-1 text-xs font-medium text-slate-700">{report.title}</p>
+        <p className="mt-1 line-clamp-3 text-xs text-slate-600">{report.description}</p>
+      </div>
+      <div className="mt-auto flex gap-2 pt-2">
+        <button
+          onClick={onDelete}
+          className="rounded-lg bg-rose-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-rose-700"
+        >
+          Eliminar
+        </button>
+        <button
+          onClick={onModify}
+          className="rounded-lg bg-indigo-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-indigo-700"
+        >
+          Modificar quiz
+        </button>
+      </div>
+    </div>
+  );
+};
+
 export default ReportThumbnails;
