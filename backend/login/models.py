@@ -5,11 +5,9 @@ from .managers import CustomUserManager
 from django.utils.crypto import get_random_string
 
 
-# Create your models here.
-
 class User(AbstractBaseUser, PermissionsMixin):
     username = models.CharField(_('Username'), max_length=50, unique=True)
-    email = models.EmailField(_('Email'), max_length=254, unique = True)
+    email = models.EmailField(_('Email'), max_length=254, unique=True)
     is_staff = models.BooleanField(default=False)
     is_active = models.BooleanField(default=False)
     date_joined = models.DateTimeField(auto_now_add=True)
@@ -20,12 +18,12 @@ class User(AbstractBaseUser, PermissionsMixin):
     objects = CustomUserManager()
 
     class Meta:
-        verbose_name = _('User') 
+        verbose_name = _('User')
         verbose_name_plural = _('Users')
 
     def __str__(self) -> str:
         return self.email
-    
+
     @property
     def get_full_name(self):
         return f"{self.username} {self.email}"
@@ -42,11 +40,10 @@ class OTPVerification(models.Model):
 
 
 class API_TOKEN(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, default=-1) 
+    user = models.ForeignKey(
+        User, on_delete=models.CASCADE, null=True, default=-1)
     api_key = models.CharField(max_length=200)
     secret_key = models.CharField(max_length=200)
+
     class Meta:
         verbose_name_plural = 'API KEYS'
-
-    
-
