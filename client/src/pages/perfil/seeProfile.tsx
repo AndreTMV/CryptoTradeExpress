@@ -1,223 +1,243 @@
-import React, {useState, useEffect} from "react";
+import * as React from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { toast } from "react-hot-toast";
 import { useDispatch, useSelector } from "react-redux";
-import { reset, seePublicInfo } from "../../features/perfil/perfilSlice";
-import { getUserInfo } from "../../features/auth/authSlice";
-import { RootState } from "../../app/store";
-import { areFriends, removeFriend, sendFriendRequest, friendReset, friendRequestStatus, cancelFriendRequest  } from "../../features/amigos/friendSlice";
 
-const SeeProfile = () => {
-    const dispatch = useDispatch();
-    const navigate = useNavigate();
-    const id = useParams()
-    const {userInfo } = useSelector((state:RootState) => state.auth)
-    const {perfilIsError, perfilIsLoading, perfilIsSuccess, perfilMessage, perfil } = useSelector((state:RootState) => state.perfil)
-    const {friendIsError, friendIsLoading, friendIsSuccess, friendMessage, friends } = useSelector((state:RootState) => state.friends)
-    const [areFriendsVariable, setAreFriends] = useState<boolean>(false);
-    const [friendRequest, setFriendRequest] = useState<boolean>(false);
+import type { RootState, AppDispatch } from "../../app/store";
+import {
+  seePublicInfo,
+} from "../../features/perfil/perfilSlice";
+import {
+  areFriends,
+  removeFriend,
+  sendFriendRequest,
+  friendRequestStatus,
+  cancelFriendRequest,
+  friendReset,
+} from "../../features/amigos/friendSlice";
 
-    useEffect(() => {
-        dispatch(getUserInfo())
-    }, [])
-    
+type PublicPerfil = {
+  name?: string;
+  description?: string;
+  interested_cryptos?: string[];
+  birth_day?: string;
+  videos_calification?: number;
+  friend_list?: number;
+  date_joined?: string;
+};
 
-    useEffect(() => {
-        const perfilData = {
-            id: id.id
-        }
-        console.log(perfilData)
-        dispatch(seePublicInfo(perfilData))
+const fmtDate = (s?: string) =>
+  s ? new Date(s).toLocaleDateString() : "—";
 
-    }, [id])
+const SeeProfile: React.FC = () => {
+  const dispatch = useDispatch<AppDispatch>();
+  const navigate = useNavigate();
+  const { id: paramId } = useParams<{ id: string }>();
 
-    useEffect(() => {
-        const friendsData = {
-            user: userInfo.id,
-            see_user: id.id
-        }
-        console.log(friendsData)
-        dispatch( areFriends( friendsData ) ).then(() => setAreFriends(friendMessage.friends))
-    }, [userInfo])
+  const { userInfo } = useSelector((s: RootState) => s.auth);
+  const { perfil: perfilPublico, perfilIsLoading, perfilIsError, perfilMessage } =
+    useSelector((s: RootState) => s.perfil);
+  const { isLoading: friendLoading, isError: friendError, message: friendMsg } =
+    useSelector((s: RootState) => s.friends);
 
-    useEffect(() => {
-        const friendsData = {
-            user: userInfo.id,
-            receiver: id.id
-        }
-        console.log(friendsData)
-        dispatch( friendRequestStatus( friendsData ) ).then((response) => setFriendRequest(response.payload.status))
-    }, [userInfo])
-    
-    useEffect(() => {
-        if (friendIsError) {
-            toast.error(friendMessage);
-            toast.error('Ha ocurrido un error, intentelo de nuevo.')
-        }
+  const [areFriendsState, setAreFriendsState] = React.useState(false);
+  const [hasPendingRequest, setHasPendingRequest] = React.useState(false);
 
-        if (friendIsSuccess && friendIsLoading) {
-            navigate("/dashboard")
-            toast.success("Se ha realizado la accion correctamente")
-        }
+  const viewingUserId = React.useMemo(
+    () => (paramId ? Number(paramId) : null),
+    [paramId]
+  );
+  const myUserId = userInfo?.id ?? null;
+  const isMe = viewingUserId && myUserId && viewingUserId === myUserId;
 
-        // return () =>
-        // {
-        //     dispatch(friendReset())
-        // }
+  React.useEffect(() => {
+    if (!viewingUserId) return;
 
-    }, [friendIsError,friendIsSuccess])
+    void dispatch(seePublicInfo({ id: viewingUserId }));
+  }, [dispatch, viewingUserId]);
 
-    useEffect(() => {
-        if (perfilIsError) {
-        toast.error(perfilMessage);
-            toast.error('Ha ocurrido un error, intentelo de nuevo.')
-        }
+  React.useEffect(() => {
+    const run = async () => {
+      if (!myUserId || !viewingUserId || isMe) return;
 
-        if (perfilIsSuccess) {
-            navigate("/dashboard")
-            toast.success("Se ha modificado la informacion de tu perfil")
-        }
-        // return () =>
-        // {
-        //     dispatch(reset())
-        // }
-    }, [perfilIsError,perfilIsSuccess])
+      try {
+        const friendsData = { user: myUserId, see_user: viewingUserId };
+        const areRes = await dispatch(areFriends(friendsData)).unwrap();
+        setAreFriendsState(Boolean(areRes?.friends));
 
-    useEffect(() => {
-        console.log(friendRequest)
-    
-    }, [friendRequest])
-
-    useEffect(() => {
-        console.log(areFriendsVariable)
-    
-    }, [areFriendsVariable])   
-
-    const formatDate = (date: string) => {
-        return new Date(date).toLocaleDateString();
+        const reqData = { user: myUserId, receiver: viewingUserId };
+        const reqRes = await dispatch(friendRequestStatus(reqData)).unwrap();
+        setHasPendingRequest(Boolean(reqRes?.status));
+      } catch (err) {
+        console.error("Estado de amistad/solicitud no disponible:", err);
+      }
     };
+    void run();
 
-    const eliminarAmigo = (evt ) => {
-        evt.preventDefault()
-        const friendsData = {
-            user: userInfo.id,
-            receiver_id: id.id
-        }
-        dispatch(removeFriend(friendsData))
-        window.location.reload();
-    }
-
-    const agregarAmigo = ( evt ) => {
-        evt.preventDefault()
-        const friendsData = {
-            user: userInfo.id,
-            receiver_user_id: id.id,
-        }
-        dispatch(sendFriendRequest(friendsData))
-        window.location.reload();
-    }
-
-    const cancelarSolicitud = ( evt ) => {
-        evt.preventDefault()
-        const friendsData = {
-            user: userInfo.id,
-            receiver_id: id.id,
-        }
-        dispatch(cancelFriendRequest(friendsData))
-        window.location.reload();
-    }
-
-    const renderPerfilData = () => {
-        return (
-            <>
-                {perfil.name && (
-                    <div className="mb-4">
-                    <label className="block text-gray-700 font-bold mb-2">Nombre:</label>
-                    <p className="text-gray-800">{perfil.name}</p>
-                    </div>
-                )}
-                {perfil.description && (
-                    <div className="mb-4">
-                    <label className="block text-gray-700 font-bold mb-2">Descripción:</label>
-                    <p className="text-gray-800">{perfil.description}</p>
-                    </div>
-                )}
-                {perfil.interested_cryptos && (
-                    <div className="mb-4">
-                    <label className="block text-gray-700 font-bold mb-2">Cryptos de interés:</label>
-                    <p className="text-gray-800">{perfil.interested_cryptos.join(', ')}</p>
-                    </div>
-                )}
-                {perfil.birth_day && (
-                    <div className="mb-4">
-                    <label className="block text-gray-700 font-bold mb-2">Fecha de nacimiento:</label>
-                    <p className="text-gray-800">{formatDate(perfil.birth_day)}</p>
-                    </div>
-                )}
-                {perfil.videos_calification && (
-                    <div className="mb-4">
-                    <label className="block text-gray-700 font-bold mb-2">Calificación promedio de los Videos:</label>
-                    <p className="text-gray-800">{perfil.videos_calification}</p>
-                    </div>
-                )}
-                {(perfil.friend_list || perfil.friend_list === 0) && (
-                    <div className="mb-4">
-                    <label className="block text-gray-700 font-bold mb-2">Amigos:</label>
-                    <p className="text-gray-800">{perfil.friend_list}</p>
-                    </div>
-                )}
-                {perfil.date_joined && (
-                    <div className="mb-4">
-                    <label className="block text-gray-700 font-bold mb-2">Miembro desde:</label>
-                    <p className="text-gray-800">{formatDate(perfil.date_joined)}</p>
-                    </div>
-                )}
-                </>
-        );
+    return () => {
+      dispatch(friendReset());
     };
+  }, [dispatch, myUserId, viewingUserId, isMe]);
+
+  React.useEffect(() => {
+    if (perfilIsError && perfilMessage) toast.error(perfilMessage);
+  }, [perfilIsError, perfilMessage]);
+
+  React.useEffect(() => {
+    if (friendError && friendMsg) toast.error(String(friendMsg));
+  }, [friendError, friendMsg]);
+
+  const handleRemoveFriend = async () => {
+    if (!myUserId || !viewingUserId) return;
+    try {
+      await dispatch(
+        removeFriend({ user: myUserId, receiver_id: viewingUserId })
+      ).unwrap();
+      setAreFriendsState(false);
+      setHasPendingRequest(false);
+      toast.success("Amigo eliminado");
+    } catch (err) {
+      toast.error("No se pudo eliminar al amigo");
+      console.error(err);
+    }
+  };
+
+  const handleSendRequest = async () => {
+    if (!myUserId || !viewingUserId) return;
+    try {
+      await dispatch(
+        sendFriendRequest({ user: myUserId, receiver_user_id: viewingUserId })
+      ).unwrap();
+      setHasPendingRequest(true);
+      toast.success("Solicitud enviada");
+    } catch (err) {
+      toast.error("No se pudo enviar la solicitud");
+      console.error(err);
+    }
+  };
+
+  const handleCancelRequest = async () => {
+    if (!myUserId || !viewingUserId) return;
+    try {
+      await dispatch(
+        cancelFriendRequest({ user: myUserId, receiver_id: viewingUserId })
+      ).unwrap();
+      setHasPendingRequest(false);
+      toast.success("Solicitud cancelada");
+    } catch (err) {
+      toast.error("No se pudo cancelar la solicitud");
+      console.error(err);
+    }
+  };
+
+  if (perfilIsLoading) {
     return (
-        <div className="flex items-center justify-center h-screen mt-6">
-            <div className="bg-white p-8 rounded shadow-md">
-                <h1 className="text-3xl font-bold mb-6 text-center text-blue-500">CryptoTradeExpress</h1>
-                {perfilIsLoading ? (
-                    <p>Cargando...</p>
-                    ) : (
-                    renderPerfilData()
-                )}
+      <div className="mx-auto mt-24 grid max-w-2xl grid-cols-1 gap-4 p-4">
+        {Array.from({ length: 5 }).map((_, i) => (
+          <div key={i} className="h-16 animate-pulse rounded-2xl bg-slate-200" />
+        ))}
+      </div>
+    );
+  }
 
-                {areFriendsVariable ? (
-                    <button
-                        type="button"
-                        className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline mt-3 mr-2"
-                        onClick={eliminarAmigo}
-                    >
-                        Eliminar Amigo
-                    </button>
-                ) : (
-                    friendRequest ? (
-                        <button
-                            type="button"
-                            className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline mt-3 mr-2"
-                            onClick={cancelarSolicitud}
-                        >
-                            Cancelar Solicitud
-                        </button>
-                    ) : (
-                        <button
-                            type="button"
-                            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline mt-3 mr-2"
-                            onClick={agregarAmigo}
-                        >
-                            Enviar Solicitud
-                        </button>
-                    )
-                )}
-                <button className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mt-3">
-                <Link to="/dashboard">Regresar</Link>
-                </button>
-            </div>
+  const p = (perfilPublico || {}) as PublicPerfil;
+
+  return (
+    <div className="mx-auto mt-20 max-w-xl p-4">
+      <div className="rounded-2xl bg-white p-6 shadow ring-1 ring-slate-200">
+        <h1 className="mb-4 text-center text-2xl font-extrabold tracking-tight text-indigo-900">
+          CryptoTradeExpress
+        </h1>
+
+        {/* Datos públicos */}
+        <div className="space-y-3">
+          {p.name && (
+            <Item label="Nombre" value={p.name} />
+          )}
+          {p.description && (
+            <Item label="Descripción" value={p.description} />
+          )}
+          {Array.isArray(p.interested_cryptos) && p.interested_cryptos.length > 0 && (
+            <Item
+              label="Criptos de interés"
+              value={p.interested_cryptos.join(", ")}
+            />
+          )}
+          {"birth_day" in p && (
+            <Item label="Fecha de nacimiento" value={fmtDate(p.birth_day)} />
+          )}
+          {"videos_calification" in p && (
+            <Item
+              label="Calificación promedio de los videos"
+              value={p.videos_calification?.toFixed(2) ?? "—"}
+            />
+          )}
+          {("friend_list" in p) && (
+            <Item label="Amigos" value={String(p.friend_list ?? 0)} />
+          )}
+          {"date_joined" in p && (
+            <Item label="Miembro desde" value={fmtDate(p.date_joined)} />
+          )}
         </div>
+
+        {/* Acciones de amistad (ocultar si es mi propio perfil) */}
+        {!isMe && (
+          <div className="mt-6 flex flex-wrap items-center gap-3">
+            {areFriendsState ? (
+              <button
+                onClick={handleRemoveFriend}
+                disabled={friendLoading}
+                className="rounded-lg bg-rose-600 px-4 py-2 font-semibold text-white hover:bg-rose-700 disabled:opacity-60"
+              >
+                {friendLoading ? "Procesando..." : "Eliminar amigo"}
+              </button>
+            ) : hasPendingRequest ? (
+              <button
+                onClick={handleCancelRequest}
+                disabled={friendLoading}
+                className="rounded-lg bg-amber-600 px-4 py-2 font-semibold text-white hover:bg-amber-700 disabled:opacity-60"
+              >
+                {friendLoading ? "Procesando..." : "Cancelar solicitud"}
+              </button>
+            ) : (
+              <button
+                onClick={handleSendRequest}
+                disabled={friendLoading}
+                className="rounded-lg bg-indigo-600 px-4 py-2 font-semibold text-white hover:bg-indigo-700 disabled:opacity-60"
+              >
+                {friendLoading ? "Procesando..." : "Enviar solicitud"}
+              </button>
+            )}
+
+            <Link
+              to="/dashboard"
+              className="rounded-lg bg-slate-700 px-4 py-2 font-semibold text-white hover:bg-slate-800"
+            >
+              Regresar
+            </Link>
+          </div>
+        )}
+
+        {isMe && (
+          <div className="mt-6">
+            <Link
+              to="/dashboard"
+              className="rounded-lg bg-slate-700 px-4 py-2 font-semibold text-white hover:bg-slate-800"
+            >
+              Regresar
+            </Link>
+          </div>
+        )}
+      </div>
+    </div>
   );
 };
 
-export default SeeProfile
+const Item: React.FC<{ label: string; value: React.ReactNode }> = ({ label, value }) => (
+  <div>
+    <div className="text-sm font-semibold text-slate-700">{label}</div>
+    <div className="text-slate-800">{value}</div>
+  </div>
+);
+
+export default SeeProfile;

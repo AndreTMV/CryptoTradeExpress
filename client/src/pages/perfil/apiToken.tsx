@@ -1,107 +1,160 @@
-import React, { useEffect, useState } from "react";
+import * as React from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { useDispatch, useSelector } from 'react-redux';
-import {setKeys, reset} from '../../features/perfil/perfilSlice';
-import { toast } from 'react-hot-toast';
-import { RootState } from '../../app/store';
+import { toast } from "react-hot-toast";
+import { useDispatch, useSelector } from "react-redux";
 
-const  APIPage = () => {
-  const [values, setValues] = useState({
+import type { RootState, AppDispatch } from "../../app/store";
+import { setKeys, reset } from "../../features/perfil/perfilSlice";
+
+type FormState = {
+  api_key: string;
+  secret_key: string;
+};
+
+const APIPage: React.FC = () => {
+  const dispatch = useDispatch<AppDispatch>();
+  const navigate = useNavigate();
+
+  const { userInfo } = useSelector((s: RootState) => s.auth);
+  const { isLoading, isError, message } =
+    useSelector((s: RootState) => s.perfil);
+
+  const [values, setValues] = React.useState<FormState>({
     api_key: "",
     secret_key: "",
   });
-  const { api_key, secret_key } = values;
-  const dispatch = useDispatch();
-  const navigate = useNavigate();
-  const { userInfo } = useSelector((state: RootState) => state.auth);
-  const { perfilIsError, perfilIsLoading, perfilIsSuccess, perfilMessage } = useSelector( ( state: RootState ) => state.perfil );
+  const [showApi, setShowApi] = React.useState(false);
+  const [showSecret, setShowSecret] = React.useState(false);
 
+  const isValid = values.api_key.trim().length > 0 && values.secret_key.trim().length > 0;
 
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setValues((prev) => ({ ...prev, [name]: value }));
+  };
 
-  function handleSubmit(evt) {
-    evt.preventDefault();
-    const userData = {
-      user: userInfo.id,
-      key: api_key,
-      secret: secret_key,
+  const handleSubmit: React.FormEventHandler<HTMLFormElement> = async (e) => {
+    e.preventDefault();
+    if (!userInfo?.id) {
+      toast.error("No se pudo identificar al usuario.");
+      return;
+    }
+    if (!isValid) {
+      toast.error("Completa ambos campos.");
+      return;
+    }
+
+    try {
+      await dispatch(
+        setKeys({
+          user: userInfo.id,
+          key: values.api_key.trim(),
+          secret: values.secret_key.trim(),
+        })
+      ).unwrap();
+      toast.success("Se configuraron tus llaves correctamente.");
+      navigate("/dashboard");
+    } catch (err) {
+      toast.error("No se pudieron guardar las llaves. Intenta de nuevo.");
+      console.error(err);
+    }
+  };
+
+  React.useEffect(() => {
+    if (isError && message) {
+      toast.error(message);
+    }
+    return () => {
+      dispatch(reset());
     };
-    dispatch(setKeys(userData));
-  }
-
-  function handleChange(evt) {
-    const { name, value } = evt.target;
-    setValues(prevState => ({
-      ...prevState,
-      [name]: value
-    }));
-  }
-
-  useEffect(() => {
-    if (perfilIsError) {
-      toast.error(perfilMessage)
-    }
-
-    if (perfilIsSuccess && !perfilIsLoading) {
-      toast.success("Se ha configurado tus keys")
-      navigate( "/dashboard")
-    }
-
-    return () =>
-    {
-      dispatch(reset())
-    }
-  }, [perfilIsError, perfilIsSuccess, perfilIsLoading]);
+  }, [dispatch, isError, message]);
 
   return (
-    <div className="flex items-center justify-center h-screen">
-      <form className="bg-white p-8 rounded shadow-md">
-        <h1 className="text-3xl font-bold mb-6 text-center text-blue-500">
+    <div className="flex min-h-screen items-center justify-center p-4">
+      <form
+        onSubmit={handleSubmit}
+        className="w-full max-w-md rounded-2xl bg-white p-8 shadow ring-1 ring-slate-200"
+        autoComplete="off"
+      >
+        <h1 className="mb-6 text-center text-2xl font-extrabold tracking-tight text-indigo-900">
           CryptoTradeExpress
         </h1>
-        <input
-          id="api_key"
-          name="api_key"
-          type="text"
-          value={api_key}
-          onChange={handleChange}
-          placeholder="API KEY"
-          className="text-black w-full border p-2 mb-4 rounded-md focus:outline-none focus:border-blue-500"
-        />
-        <input
-          id="secret_key"
-          name="secret_key"
-          type="password"
-          value={secret_key}
-          onChange={handleChange}
-          placeholder="SECRET KEY"
-          className="text-black w-full border p-2 mb-4 rounded-md focus:outline-none focus:border-blue-500"
-        />
 
-        <div className="flex justify-between">
+        <label htmlFor="api_key" className="mb-1 block text-sm font-medium text-slate-700">
+          API Key
+        </label>
+        <div className="mb-4 flex items-center gap-2">
+          <input
+            id="api_key"
+            name="api_key"
+            type={showApi ? "text" : "password"}
+            value={values.api_key}
+            onChange={handleChange}
+            className="w-full rounded-lg border border-slate-300 p-2 text-slate-900 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+            placeholder="Tu API Key"
+            inputMode="text"
+            autoComplete="new-password"
+          />
           <button
-            type="submit"
-            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
-            onClick={handleSubmit}
+            type="button"
+            onClick={() => setShowApi((s) => !s)}
+            className="whitespace-nowrap rounded-md border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
           >
-            Activar API
-          </button>
-          <button className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded ml-4">
-            <Link to="/perfilPage">Regresar</Link>
+            {showApi ? "Ocultar" : "Ver"}
           </button>
         </div>
+
+        <label htmlFor="secret_key" className="mb-1 block text-sm font-medium text-slate-700">
+          Secret Key
+        </label>
+        <div className="mb-6 flex items-center gap-2">
+          <input
+            id="secret_key"
+            name="secret_key"
+            type={showSecret ? "text" : "password"}
+            value={values.secret_key}
+            onChange={handleChange}
+            className="w-full rounded-lg border border-slate-300 p-2 text-slate-900 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+            placeholder="Tu Secret Key"
+            autoComplete="new-password"
+          />
+          <button
+            type="button"
+            onClick={() => setShowSecret((s) => !s)}
+            className="whitespace-nowrap rounded-md border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+          >
+            {showSecret ? "Ocultar" : "Ver"}
+          </button>
+        </div>
+
+        <div className="flex items-center justify-between">
+          <button
+            type="submit"
+            disabled={!isValid || isLoading}
+            className="rounded-lg bg-indigo-600 px-4 py-2 font-semibold text-white hover:bg-indigo-700 disabled:opacity-60"
+          >
+            {isLoading ? "Activando..." : "Activar API"}
+          </button>
+
+          <Link
+            to="/perfilPage"
+            className="rounded-lg bg-slate-700 px-4 py-2 font-semibold text-white hover:bg-slate-800"
+          >
+            Regresar
+          </Link>
+        </div>
+
         <a
-            href="https://www.binance.com/es/support/faq/cómo-crear-claves-api-en-binance-360002502072"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-blue-500 text-sm mb-4 block"
+          href="https://www.binance.com/es/support/faq/cómo-crear-claves-api-en-binance-360002502072"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mt-4 block text-sm text-indigo-600 hover:underline"
         >
-            ¿No sabes como conectarte con binance?
+          ¿No sabes cómo conectarte con Binance?
         </a>
       </form>
-
     </div>
   );
-}
+};
 
 export default APIPage;
-

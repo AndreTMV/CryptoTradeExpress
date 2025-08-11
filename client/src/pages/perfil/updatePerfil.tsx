@@ -1,180 +1,229 @@
-import React, { useState, useEffect } from "react";
-import { Link, useNavigate, useLocation } from "react-router-dom";
+import * as React from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { toast } from "react-hot-toast";
 import { useDispatch, useSelector } from "react-redux";
-import { updatePerfil, } from "../../features/perfil/perfilSlice";
-import Datepicker from "tailwind-datepicker-react"
-import { update } from "plotly.js";
+import { format, parseISO, isValid as isValidDate } from "date-fns";
 
-var today = new Date();
-var dd = String(today.getDate()).padStart(2, '0');
-var mm = String(today.getMonth() + 1).padStart(2, '0'); //January is 0!
-var yyyy = today.getFullYear();
+import type { AppDispatch, RootState } from "../../app/store";
+import type { IPerfil } from "../../features/perfil/types";
+import { updatePerfil } from "../../features/perfil/perfilSlice";
 
-today = mm + '/' + dd + '/' + yyyy;
-const optionsInicio = {
-	title: "Cumpleaños",
-	autoHide: true,
-	todayBtn: false,
-	clearBtn: true,
-	clearBtnText: "Clear",
-	maxDate: new Date("2007-12-31"),
-	minDate: new Date("1962-01-01"),
-	theme: {
-		background: "bg-gray-700 dark:bg-gray-800",
-		todayBtn: "",
-		clearBtn: "",
-		icons: "",
-		text: "",
-		disabledText: "bg-red-500",
-		input: "",
-		inputIcon: "",
-		selected: "",
-	},
-	icons: {
-		// () => ReactElement | JSX.Element
-		prev: () => <span>Previous</span>,
-		next: () => <span>Next</span>,
-	},
-	datepickerClassNames: "top-12",
-	defaultDate: new Date(today),
-	language: "es",
-	disabledDates: [],
-	weekDays: ["L", "Ma", "Mi", "J", "V", "S", "D"],
-	inputNameProp: "date",
-	inputIdProp: "date",
-	inputPlaceholderProp: "Selecciona fecha",
-	inputDateFormatProp: {
-		day: "numeric",
-		month: "long",
-		year: "numeric"
-	}
-}
+import Datepicker from "tailwind-datepicker-react";
 
-export function ActualizarPerfilPage() {
+const datepickerOptions: any = {
+  title: "Cumpleaños",
+  autoHide: true,
+  todayBtn: false,
+  clearBtn: true,
+  clearBtnText: "Limpiar",
+  maxDate: new Date("2007-12-31"),
+  minDate: new Date("1962-01-01"),
+  theme: {
+    background: "bg-white",
+    todayBtn: "",
+    clearBtn: "",
+    icons: "",
+    text: "",
+    disabledText: "",
+    input: "",
+    inputIcon: "",
+    selected: "",
+  },
+  datepickerClassNames: "top-12 z-50",
+  defaultDate: new Date("1990-01-01"),
+  language: "es",
+  disabledDates: [],
+  weekDays: ["L", "Ma", "Mi", "J", "V", "S", "D"],
+  inputPlaceholderProp: "Selecciona fecha",
+  inputDateFormatProp: { day: "numeric", month: "long", year: "numeric" },
+};
 
-  function formatDate(date:Date) {
-      const year = date.getFullYear();
-      const month = String(date.getMonth() + 1).padStart(2, '0'); // Agrega un cero inicial si el mes es de un solo dígito
-      const day = String(date.getDate()).padStart(2, '0'); // Agrega un cero inicial si el día es de un solo dígito
-      return `${year}-${month}-${day}`;
-  }
-  const [birthDay, setBirthDay] = useState<Date | null>(null);
-  const [showBirthDay, setShowBirthDay] = useState<boolean>(false);
-  const [loading, setLoading] = useState(true);
-  const [values, setValues] = useState({
-    perfilId:"",
-    name: "",
-    description: "",
-    interested_cryptos: "",
-    birth_day: "",
-  });
+const toISODate = (d: Date | null) => {
+  if (!d) return null;
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+};
 
-  const { name, description, interested_cryptos } = values;
-  const dispatch = useDispatch();
+const fmtDate = (value?: string) => {
+  if (!value) return "";
+  const parsed = parseISO(value);
+  return isValidDate(parsed) ? format(parsed, "dd/MM/yyyy") : value;
+};
+
+type LocationState = { perfil: IPerfil } | undefined;
+
+export const ActualizarPerfilPage: React.FC = () => {
+  const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
   const location = useLocation();
-  let { perfil } = location.state || {}
-  const { perfilIsError, perfilIsLoading, perfilIsSuccess, perfilMessage } = useSelector((state) => state.perfil);
+  const state = (location.state as LocationState) || undefined;
+  const perfil = state?.perfil;
 
-  useEffect(() => {
-    if ( perfil )
-    {
-        setValues( {
-          perfilId: perfil.id,
-          name: perfil.name,
-          description: perfil.description,
-          interested_cryptos: perfil.interested_cryptos.join( "," ),
-          birth_day: perfil.birth_day
-        })
+  const { isLoading } = useSelector((s: RootState) => s.perfil);
+
+  const [name, setName] = React.useState<string>("");
+  const [description, setDescription] = React.useState<string>("");
+  const [interestedCryptos, setInterestedCryptos] = React.useState<string>(""); // CSV
+  const [birthDay, setBirthDay] = React.useState<Date | null>(null);
+  const [showBirthDay, setShowBirthDay] = React.useState<boolean>(false);
+  const [ready, setReady] = React.useState<boolean>(false);
+
+  React.useEffect(() => {
+    if (!perfil) {
+      navigate("/dashboard");
+      toast.error("No se encontró el perfil a editar.");
+      return;
     }
-    setLoading(false);
-  }, [perfil]);
+    setName(perfil.name ?? "");
+    setDescription(perfil.description ?? "");
+    setInterestedCryptos(
+      Array.isArray(perfil.interested_cryptos)
+        ? perfil.interested_cryptos.join(", ")
+        : ""
+    );
+    if (perfil.birth_day) {
+      const p = parseISO(perfil.birth_day);
+      if (isValidDate(p)) setBirthDay(p);
+    }
+    setReady(true);
+  }, [perfil, navigate]);
 
-  const handleChange = (evt: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = evt.target;
-    setValues({ ...values, [name]: value });
-  };
+  const onSubmit: React.FormEventHandler<HTMLFormElement> = async (e) => {
+    e.preventDefault();
+    if (!perfil) return;
 
-  const handleSubmit = (evt: React.FormEvent<HTMLFormElement>) => {
-
-    evt.preventDefault();
-    let finalBirthDay
-    if(birthDay !== null)
-        finalBirthDay = formatDate(birthDay)
-
-    const updatedPerfil = {
-      username:perfil.username,
-      perfilId:perfil.id,
-      name: name.trim() !== "" ? name : perfil.name,
-      description: description.trim() !== "" ? description : perfil.description,
-      interested_cryptos: interested_cryptos.trim() !== "" ? interested_cryptos.split(",") : perfil.interested_cryptos,
-      birth_day: birthDay !== null ? finalBirthDay : perfil.birth_day,
+    const payload = {
+      username: perfil.username,
+      perfilId: perfil.id,
+      name: name.trim() || perfil.name,
+      description: description.trim() || perfil.description,
+      interested_cryptos: interestedCryptos.trim()
+        ? interestedCryptos.split(",").map((s) => s.trim()).filter(Boolean)
+        : perfil.interested_cryptos,
+      birth_day: birthDay ? toISODate(birthDay) : perfil.birth_day,
     };
-    dispatch(updatePerfil(updatedPerfil))
-      .then(() => {
-        toast.success("Perfil actualizado correctamente");
-        navigate("/dashboard");
-      })
-      .catch((error) => {
-        toast.error("Error al actualizar el perfil. Inténtalo de nuevo.");
-      });
-  };
-  const handleChangeBirthDay = (selectedDate: Date) => {
-	setBirthDay(selectedDate);
-	console.log(selectedDate);
+
+    try {
+      await dispatch(updatePerfil(payload)).unwrap();
+      toast.success("Perfil actualizado correctamente");
+      navigate("/dashboard");
+    } catch (err) {
+      console.error(err);
+      toast.error("Error al actualizar el perfil. Inténtalo de nuevo.");
+    }
   };
 
-  const handleCloseBirthDay = (state: boolean) => {
-	setShowBirthDay(state);
-  };
-
-  if (loading) {
-    return <div>Cargando...</div>;
+  if (!ready) {
+    return (
+      <div className="mx-auto mt-24 grid max-w-2xl grid-cols-1 gap-4 p-4">
+        {Array.from({ length: 3 }).map((_, i) => (
+          <div key={i} className="h-28 animate-pulse rounded-2xl bg-slate-200" />
+        ))}
+      </div>
+    );
   }
 
   return (
-    <div className="flex items-center justify-center h-screen">
-      <form className="bg-white p-8 rounded shadow-md">
-        <h1 className="text-3xl font-bold mb-6 text-center text-blue-500">
+    <div className="mx-auto mt-20 max-w-xl p-4">
+      <div className="mb-6 text-center">
+        <h1 className="text-3xl font-extrabold tracking-tight text-indigo-900">
           Actualizar Perfil
         </h1>
-        <input
-          type="text"
-          name="name"
-          value={name}
-          onChange={handleChange}
-          placeholder="Nombre"
-          className="text-black w-full border p-2 mb-4 rounded-md focus:outline-none focus:border-blue-500"
-        />
-        <input
-          type="text"
-          name="description"
-          value={description}
-          onChange={handleChange}
-          placeholder="Descripción"
-          className="text-black w-full border p-2 mb-4 rounded-md focus:outline-none focus:border-blue-500"
-        />
-        <input
-          type="text"
-          name="interested_cryptos"
-          value={interested_cryptos}
-          onChange={handleChange}
-          placeholder="Cryptos de interés (separados por comas)"
-          className="text-black w-full border p-2 mb-4 rounded-md focus:outline-none focus:border-blue-500"
-        />
-    	<Datepicker options={optionsInicio} onChange={handleChangeBirthDay} show={showBirthDay} setShow={handleCloseBirthDay} />
-        <button
-          type="submit"
-          className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline mt-3"
-          onClick={handleSubmit}
-        >
-          Guardar Cambios
-        </button>
-        <button className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded ml-10">
-          <Link to="/dashboard">Cancelar</Link>
-        </button>
+        <p className="mt-1 text-sm text-slate-600">
+          Modifica tus datos y guarda los cambios
+        </p>
+      </div>
+
+      <form
+        onSubmit={onSubmit}
+        className="space-y-5 rounded-2xl bg-white p-6 shadow ring-1 ring-slate-200"
+      >
+        <div>
+          <label htmlFor="name" className="text-sm font-medium text-slate-700">
+            Nombre
+          </label>
+          <input
+            id="name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder={perfil?.name ?? "Tu nombre"}
+            className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 outline-none ring-indigo-200 focus:ring"
+          />
+        </div>
+
+        <div>
+          <label htmlFor="description" className="text-sm font-medium text-slate-700">
+            Descripción
+          </label>
+          <input
+            id="description"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder={perfil?.description ?? "Cuéntanos sobre ti"}
+            className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 outline-none ring-indigo-200 focus:ring"
+          />
+        </div>
+
+        <div>
+          <label htmlFor="interestedCryptos" className="text-sm font-medium text-slate-700">
+            Criptos de interés (separadas por coma)
+          </label>
+          <input
+            id="interestedCryptos"
+            value={interestedCryptos}
+            onChange={(e) => setInterestedCryptos(e.target.value)}
+            placeholder="BTC, ETH, SOL"
+            className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 outline-none ring-indigo-200 focus:ring"
+          />
+          {Array.isArray(perfil?.interested_cryptos) && perfil.interested_cryptos.length > 0 && (
+            <p className="mt-1 text-xs text-slate-500">
+              Actual: {perfil.interested_cryptos.join(", ")}
+            </p>
+          )}
+        </div>
+
+        <div>
+          <label className="text-sm font-medium text-slate-700">
+            Fecha de nacimiento
+          </label>
+          <div className="mt-1">
+            <Datepicker
+              options={datepickerOptions}
+              onChange={(d: Date) => setBirthDay(d)}
+              show={showBirthDay}
+              setShow={setShowBirthDay}
+            />
+            <p className="mt-2 text-xs text-slate-600">
+              {birthDay
+                ? `Seleccionada: ${format(birthDay, "dd/MM/yyyy")}`
+                : perfil?.birth_day
+                  ? `Actual: ${fmtDate(perfil.birth_day)}`
+                  : "—"}
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-3 pt-2">
+          <button
+            type="submit"
+            disabled={isLoading}
+            className="rounded-lg bg-indigo-600 px-4 py-2 font-semibold text-white shadow hover:bg-indigo-700 disabled:opacity-60"
+          >
+            {isLoading ? "Guardando..." : "Guardar cambios"}
+          </button>
+
+          <Link
+            to="/dashboard"
+            className="rounded-lg bg-slate-700 px-4 py-2 font-semibold text-white shadow hover:bg-slate-800"
+          >
+            Cancelar
+          </Link>
+        </div>
       </form>
     </div>
   );
-}
+};
+
+export default ActualizarPerfilPage;

@@ -1,146 +1,127 @@
-import  axios  from 'axios';
+import api from "../../api/axiosInstance";
+import type {
+  IPerfil,
+  PublicPerfil,
+  Similarities,
+  CreatePerfilDTO,
+  UpdatePerfilDTO,
+  UpdateHiddenInformationDTO,
+  CheckPerfilDTO,
+  PerfilInfoDTO,
+  PublicInfoDTO,
+  RecommendationsDTO,
+  ExcludeUserDTO,
+  ExcludedUsersDTO,
+  SetKeysDTO,
+  CheckKeysDTO,
+  SimpleStatus,
+} from "./types";
 
-const BACKEND_DOMAIN = "http://localhost:8000"
-const PERFIL_API = `${BACKEND_DOMAIN}/perfil/api/v1/perfil/`
-const PERFIL_EXISTS = `${BACKEND_DOMAIN}/perfil/api/v1/perfilExist/`
-const PERFIL_INFO = `${BACKEND_DOMAIN}/perfil/api/v1/perfilInfo/`
-const HIDE_INFORMATION = `${BACKEND_DOMAIN}/perfil/api/v1/hideInformation/`
-const SEE_PUBLIC_INFORMATION = `${BACKEND_DOMAIN}/perfil/api/v1/publicInformation/`
-const RECOMENDATIONS = `${BACKEND_DOMAIN}/perfil/api/v1/cosineSimilarity/` 
-const EXCLUDE_USER = `${BACKEND_DOMAIN}/perfil/api/v1/excludeUser/` 
-const EXCLUDE_USER_LIST = `${BACKEND_DOMAIN}/perfil/api/v1/excludeUserList/` 
-const SET_KEYS = `${BACKEND_DOMAIN}/api/v1/auth/setKeys/`
-const CHECK_KEYS = `${BACKEND_DOMAIN}/api/v1/auth/checkKeys/`
+const PERFIL = "/perfil/api/v1/perfil/";
+const PERFIL_EXISTS = "/perfil/api/v1/perfilExist/";
+const PERFIL_INFO = "/perfil/api/v1/perfilInfo/";
+const HIDE_INFORMATION = "/perfil/api/v1/hideInformation/";
+const PUBLIC_INFORMATION = "/perfil/api/v1/publicInformation/";
+const RECOMMENDATIONS = "/perfil/api/v1/cosineSimilarity/";
+const EXCLUDE_USER = "/perfil/api/v1/excludeUser/";
+const EXCLUDE_USER_LIST = "/perfil/api/v1/excludeUserList/";
 
-const createPerfil = async ( perfilData: any ) =>
-{
-    const config = {
-        headers: {
-            "Content-Type": "application/json"
-        }
-    }
-    const response = await axios.post(PERFIL_API, perfilData, config)
-    return response.data
-}
+const SET_KEYS = "/api/v1/auth/setKeys/";
+const CHECK_KEYS = "/api/v1/auth/checkKeys/";
 
-const checkPerfil = async ( perfilData: any ) =>
-{
-    const config = {
-        params: {
-            id: perfilData.id,
-        }
-    }
-    const response = await axios.get(PERFIL_EXISTS, config)
-    return response.data
-}
+const createPerfil = async (perfil: CreatePerfilDTO): Promise<IPerfil> => {
+  const { data } = await api.post(PERFIL, perfil);
+  return data;
+};
 
-const perfilInfo = async ( perfilData: any ) =>
-{
-    const config = {
-        params: {
-            id: perfilData.id,
-        }
-    }
-    const response = await axios.get(PERFIL_INFO, config)
-    return response.data
-}
+const checkPerfil = async ({ id }: CheckPerfilDTO): Promise<boolean> => {
+  const { data } = await api.get<boolean>(PERFIL_EXISTS, { params: { id } });
+  return data;
+};
 
-const updatePerfil = async ( perfilData: any) =>
-{
-    const config = {
-        headers: {
-            'Content-Type': 'application/json'
-        }
-    }
-    const response = await axios.put(`${PERFIL_API}${perfilData.perfilId}/`,perfilData, config);
-    return response.data;
-}
+const perfilInfo = async ({ id }: PerfilInfoDTO): Promise<IPerfil> => {
+  const { data } = await api.get<IPerfil>(PERFIL_INFO, { params: { id } });
+  return data;
+};
 
-const updateHiddenInformation = async ( perfilData: any) =>
-{
-    const config = {
-        params: {
-            id: perfilData.username,
-            hide_information: perfilData.hideInformation
-        }
+//const updatePerfil = async ({ perfilId, data: body }: UpdatePerfilDTO): Promise<IPerfil> => {
+//  const { data } = await api.put<IPerfil>(`${PERFIL}${perfilId}/`, body);
+//  return data;
+//};
+const updatePerfil = async (perfilData: {
+  perfilId: number;
+  username?: number;
+  name?: string;
+  description?: string;
+  interested_cryptos?: string[];
+  birth_day?: string;
+}) => {
+  const { perfilId, ...body } = perfilData;
+  const { data } = await api.patch(`/perfil/api/v1/perfil/${perfilId}/`, body);
+  return data;
+};
 
-    }
-    const response = await axios.put(HIDE_INFORMATION,null, config);
-    return response.data;
-}
+const updateHiddenInformation = async ({
+  username,
+  hideInformation,
+}: UpdateHiddenInformationDTO): Promise<SimpleStatus> => {
+  // backend espera query param hide_information separada por comas
+  const hide_information = hideInformation.join(",");
+  const { data } = await api.put<SimpleStatus>(HIDE_INFORMATION, null, {
+    params: { id: username, hide_information },
+  });
+  return data;
+};
 
-const getAllPerfils = async () =>
-{
-    const response = await axios.get( PERFIL_API );
-    return response.data
-}
+const getAllPerfils = async (): Promise<IPerfil[]> => {
+  const { data } = await api.get<IPerfil[]>(PERFIL);
+  return data;
+};
 
-const seePublicInfo = async ( perfilData: any ) =>
-{
-    const config = {
-        params: {
-            id: perfilData.id,
-        }
-    }
-    const response = await axios.get(SEE_PUBLIC_INFORMATION, config)
-    return response.data
-}
+const seePublicInfo = async ({ id }: PublicInfoDTO): Promise<PublicPerfil> => {
+  const { data } = await api.get<PublicPerfil>(PUBLIC_INFORMATION, { params: { id } });
+  return data;
+};
 
-const fetchRecomendations = async ( perfilData: any ) =>
-{
-    const config = {
-        params: {
-            user: perfilData.user,
-        }
-    }
-    const response = await axios.get(RECOMENDATIONS, config)
-    return response.data
-}
+const fetchRecomendations = async ({ user }: RecommendationsDTO): Promise<Similarities> => {
+  const { data } = await api.get<Similarities>(RECOMMENDATIONS, { params: { user } });
+  return data;
+};
 
-const exlcudeUser = async ( perfilData: any ) =>
-{
-    const config = {
-        headers: {
-            'Content-Type':'application/json'
-        }
-    }
-    const response = await axios.put(EXCLUDE_USER,perfilData, config);
-    return response.data;
-}
+const excludeUser = async (payload: ExcludeUserDTO): Promise<SimpleStatus> => {
+  const { data } = await api.put<SimpleStatus>(EXCLUDE_USER, payload);
+  return data;
+};
 
-const fetchExcludedUsers = async ( perfilData: any ) =>
-{
-    const config = {
-        params: {
-            user: perfilData.user,
-        }
-    }
-    const response = await axios.get(EXCLUDE_USER_LIST, config)
-    return response.data
-}
+const fetchExcludedUsers = async ({ user }: ExcludedUsersDTO): Promise<number[]> => {
+  const { data } = await api.get<number[]>(EXCLUDE_USER_LIST, { params: { user } });
+  return data;
+};
 
-const setKeys = async ( perfilData: any ) =>
-{
-    const config = {
-        headers: {
-            "Content-Type": "application/json"
-        }
-    }
-    const response = await axios.post(SET_KEYS, perfilData, config)
-    return response.data
-}
+// ==== Auth (debería vivir en features/auth) ====
+const setKeys = async (payload: SetKeysDTO): Promise<SimpleStatus> => {
+  const { data } = await api.post<SimpleStatus>(SET_KEYS, payload);
+  return data;
+};
 
-const checkKeys = async ( perfilData: any ) =>
-{
-    const config = {
-        params: {
-            user: perfilData.user,
-        }
-    }
-    const response = await axios.get(CHECK_KEYS, config)
-    return response.data
-}
+const checkKeys = async ({ user }: CheckKeysDTO): Promise<SimpleStatus> => {
+  const { data } = await api.get<SimpleStatus>(CHECK_KEYS, { params: { user } });
+  return data;
+};
 
-const perfilService = { createPerfil, checkPerfil, perfilInfo, updatePerfil, updateHiddenInformation, getAllPerfils, seePublicInfo, fetchRecomendations, exlcudeUser, fetchExcludedUsers, setKeys, checkKeys }
+const perfilService = {
+  createPerfil,
+  checkPerfil,
+  perfilInfo,
+  updatePerfil,
+  updateHiddenInformation,
+  getAllPerfils,
+  seePublicInfo,
+  fetchRecomendations,
+  excludeUser,
+  fetchExcludedUsers,
+  setKeys,
+  checkKeys,
+};
 
-export default perfilService 
+export default perfilService;

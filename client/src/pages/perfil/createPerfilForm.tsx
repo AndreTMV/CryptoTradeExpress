@@ -1,449 +1,387 @@
-import React, { useState, useEffect } from "react";
+import * as React from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "react-hot-toast";
 import { useDispatch, useSelector } from "react-redux";
-import { createPerfil, reset, checkPerfil, perfilInfo, updateHiddenInformation } from "../../features/perfil/perfilSlice";
-import { format } from "date-fns";
+import { format, parseISO, isValid as isValidDate, isDate } from "date-fns";
 
+import type { RootState, AppDispatch } from "../../app/store";
+import type { HideKey, IPerfil } from "../../features/perfil/types";
+import {
+  createPerfil,
+  reset,
+  checkPerfil,
+  perfilInfo,
+  updateHiddenInformation,
+} from "../../features/perfil/perfilSlice";
 
-import Datepicker from "tailwind-datepicker-react"
-var today = new Date();
-var dd = String( today.getDate() ).padStart( 2, '0' );
-var mm = String( today.getMonth() + 1 ).padStart( 2, '0' ); //January is 0!
-var yyyy = today.getFullYear();
+import Datepicker from "tailwind-datepicker-react";
 
-today = mm + '/' + dd + '/' + yyyy;
-const optionsInicio = {
+const HIDE_FIELDS: { key: HideKey; label: string }[] = [
+  { key: "name", label: "Nombre" },
+  { key: "description", label: "Descripción" },
+  { key: "interested_cryptos", label: "Criptos de interés" },
+  { key: "birth_day", label: "Fecha de nacimiento" },
+  { key: "videos_calification", label: "Calificación promedio de videos" },
+  { key: "friend_list", label: "Amigos" },
+  { key: "date_joined", label: "Miembro desde" },
+];
+
+const toISODate = (d: Date | null): string | null => {
+  if (!d) return null;
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  return `${yyyy}-${mm}-${dd}`;
+};
+
+const fmtDate = (value?: string | Date | null) => {
+  if (!value) return "—";
+  let dateObj: Date;
+  if (typeof value === "string") {
+    const p = parseISO(value);
+    dateObj = isValidDate(p) ? p : new Date(value);
+  } else {
+    dateObj = value;
+  }
+  return isDate(dateObj) && isValidDate(dateObj) ? format(dateObj, "dd/MM/yyyy") : "—";
+};
+
+const datepickerOptions: any = {
   title: "Cumpleaños",
   autoHide: true,
   todayBtn: false,
   clearBtn: true,
-  clearBtnText: "Clear",
-  maxDate: new Date( "2007-01-01" ),
-  minDate: new Date( "1962-01-01" ),
+  clearBtnText: "Limpiar",
+  maxDate: new Date("2007-01-01"),
+  minDate: new Date("1962-01-01"),
   theme: {
-    background: "bg-gray-700 dark:bg-gray-800",
+    background: "bg-white",
     todayBtn: "",
     clearBtn: "",
     icons: "",
     text: "",
-    disabledText: "bg-red-500",
+    disabledText: "",
     input: "",
     inputIcon: "",
     selected: "",
   },
-  icons: {
-    // () => ReactElement | JSX.Element
-    prev: () => <span>Previous</span>,
-    next: () => <span>Next</span>,
-  },
-  datepickerClassNames: "top-12",
-  defaultDate: new Date( today ),
+  datepickerClassNames: "top-12 z-50",
+  defaultDate: new Date("1990-01-01"),
   language: "es",
-  disabledDates: [],
   weekDays: ["L", "Ma", "Mi", "J", "V", "S", "D"],
-  inputNameProp: "date",
-  inputIdProp: "date",
   inputPlaceholderProp: "Selecciona fecha",
-  inputDateFormatProp: {
-    day: "numeric",
-    month: "long",
-    year: "numeric"
-  }
-}
+  inputDateFormatProp: { day: "numeric", month: "long", year: "numeric" },
+};
 
-function formatJoinDate( joinDate: Date )
-{
-  return format( new Date( joinDate ), "dd/MM/yyyy" );
-}
-export function CreatePerfilPage()
-{
+const SectionCard: React.FC<{ title: string; children: React.ReactNode }> = ({ title, children }) => (
+  <div className="rounded-2xl bg-white p-6 shadow ring-1 ring-slate-200">
+    <h2 className="mb-4 text-lg font-semibold text-slate-900">{title}</h2>
+    {children}
+  </div>
+);
 
-  function formatDate( date: Date )
-  {
-    const year = date.getFullYear();
-    const month = String( date.getMonth() + 1 ).padStart( 2, '0' ); // Agrega un cero inicial si el mes es de un solo dígito
-    const day = String( date.getDate() ).padStart( 2, '0' ); // Agrega un cero inicial si el día es de un solo dígito
-    return `${ year }-${ month }-${ day }`;
-  }
-
-  const [birthDay, setBirthDay] = useState<Date | null>( null );
-  const [showBirthDay, setShowBirthDay] = useState<boolean>( false );
-  const [isProfileExist, setIsProfileExist] = useState( false );
-  const [perfil, setPerfil] = useState()
-  const [loading, setLoading] = useState( true );
-  const [values, setValues] = React.useState( {
-    name: "",
-    description: "",
-    interested_cryptos: [],
-  } );
-  const [privacySettings, setPrivacySettings] = useState( {} );
-  const { name, description, interested_cryptos } = values;
-  const dispatch = useDispatch();
+export const CreatePerfilPage: React.FC = () => {
+  const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
-  const { userInfo } = useSelector( ( state ) => state.auth )
-  const { perfilIsError, perfilIsLoading, perfilIsSuccess, perfilMessage } = useSelector( ( state ) => state.perfil )
 
-  useEffect( () =>
-  {
-    dispatch( checkPerfil( { id: userInfo.id } ) )
-      .then( ( response ) =>
-      {
-        if ( response.payload )
-        {
-          setIsProfileExist( true );
-          dispatch( perfilInfo( { id: userInfo.id } ) )
-            .then( ( response ) =>
-            {
-              setPerfil( response.payload )
-              initializePrivacySettings( response.payload );
-            } )
-            .catch( ( error ) =>
-            {
-              console.log( error )
-            } )
-        } else
-        {
-          setIsProfileExist( false );
+  const { userInfo } = useSelector((s: RootState) => s.auth);
+  const { profile, isLoading, isError, isSuccess, message } = useSelector((s: RootState) => s.perfil);
+
+  const [name, setName] = React.useState<string>("");
+  const [description, setDescription] = React.useState<string>("");
+  const [interestedCryptos, setInterestedCryptos] = React.useState<string>(""); // CSV
+  const [birthDay, setBirthDay] = React.useState<Date | null>(null);
+  const [showBirthDay, setShowBirthDay] = React.useState<boolean>(false);
+
+  const [privacy, setPrivacy] = React.useState<Record<HideKey, boolean>>({
+    name: false,
+    interested_cryptos: false,
+    description: false,
+    date_joined: false,
+    friend_list: false,
+    videos_calification: false,
+    birth_day: false,
+  });
+
+  const [checking, setChecking] = React.useState(true);
+  const [hasProfile, setHasProfile] = React.useState(false);
+
+  React.useEffect(() => {
+    const run = async () => {
+      try {
+        const exists = await dispatch(checkPerfil({ id: userInfo.id })).unwrap();
+        setHasProfile(Boolean(exists));
+        if (exists) {
+          const p = await dispatch(perfilInfo({ id: userInfo.id })).unwrap();
+          const next: Record<HideKey, boolean> = { ...privacy };
+          HIDE_FIELDS.forEach(({ key }) => {
+            next[key] = Array.isArray(p.hide_information) ? p.hide_information.includes(key) : false;
+          });
+          setPrivacy(next);
         }
-      } )
-      .catch( ( error ) =>
-      {
-        console.log( error )
-      } )
-      .finally( () =>
-      {
-        setLoading( false );
-      } );
-  }, [dispatch, userInfo.id] );
-  // Función para inicializar la configuración de privacidad con valores predeterminados
-
-  const initializePrivacySettings = ( profileData ) =>
-  {
-    const initialSettings = {};
-    for ( const key in profileData )
-    {
-      initialSettings[key] = false;
-    }
-    setPrivacySettings( initialSettings );
-  };
-
-  const handlePrivacyChange = ( fieldName ) =>
-  {
-    setPrivacySettings( ( prevSettings ) => ( {
-      ...prevSettings,
-      [fieldName]: !prevSettings[fieldName],
-    } ) );
-  };
-
-  function handleSubmit( evt: any )
-  {
-    evt.preventDefault()
-    const finalBirthDay = formatDate( birthDay )
-
-    const perfilData = {
-      username: userInfo.id,
-      name,
-      description,
-      interested_cryptos,
-      birth_day: finalBirthDay
-    }
-    dispatch( createPerfil( perfilData ) )
-  }
-
-  const handleChangeBirthDay = ( selectedDate: Date ) =>
-  {
-    setBirthDay( selectedDate );
-    console.log( selectedDate );
-  };
-
-  const handleCloseBirthDay = ( state: boolean ) =>
-  {
-    setShowBirthDay( state );
-  };
-
-  const handleSubmitUpdate = ( evt: any ) =>
-  {
-    navigate( '/updatePerfil', {
-      state: {
-        perfil
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setChecking(false);
       }
-    } )
-  }
-
-  const handlePrivateInformations = ( evt: any ) =>
-  {
-    evt.preventDefault();
-    console.log( privacySettings )
-    let perfilInformation = {
-      username: perfil.username,
-      hideInformation: ""
-    }
-    let information = [];
-    Object.entries( privacySettings ).forEach( ( [key, value] ) =>
-    {
-      if ( value )
-      {
-        information.push( key )
-      }
-    } );
-    console.log( information.toString() )
-    perfilInformation.hideInformation = information.toString()
-    dispatch( updateHiddenInformation( perfilInformation ) )
-      .then( ( response ) =>
-      {
-        toast.success( "Se ha puesto la informacion seleccionada en privada" )
-
-      } )
-      .catch( ( error ) =>
-      {
-        toast.error( "Ha ocurrido un error, intentelo de nuevo" )
-
-      } )
-  }
-
-  function handleChange( evt: any )
-  {
-
-    const { target } = evt;
-    const { name, value } = target;
-    const newValue = name === 'interested_cryptos' ? value.split( ',' ) : value;
-
-    const newValues = {
-      ...values,
-      [name]: newValue,
     };
-    setValues( newValues );
-  }
+    void run();
+    return () => {
+      dispatch(reset());
+    };
+  }, [dispatch, userInfo.id]);
 
-  React.useEffect( () =>
-  {
-    if ( perfilIsError )
-    {
-      toast.error( perfilMessage );
-      toast.error( 'Ha ocurrido un error, intentelo de nuevo.' )
+  React.useEffect(() => {
+    if (isError && message) toast.error(message);
+  }, [isError, message]);
+
+  React.useEffect(() => {
+    if (isSuccess && !isLoading && !checking) {
+      // cuando se crea o actualiza algo
+      // no navegamos automáticamente aquí para no romper el flujo de privacidad;
+      // sólo en creación enviamos al dashboard (más abajo).
     }
+  }, [isSuccess, isLoading, checking]);
 
-    if ( perfilIsSuccess )
-    {
-      navigate( "/dashboard" )
-      toast.success( "Se ha modificado la informacion de tu perfil" )
+  const handleCreate = async () => {
+    if (!name.trim() || !description.trim()) {
+      toast.error("Nombre y descripción son obligatorios.");
+      return;
     }
-    dispatch( reset() )
-  }, [perfilIsError, perfilIsSuccess, navigate, dispatch] )
+    try {
+      const payload = {
+        username: userInfo.id,
+        name: name.trim(),
+        description: description.trim(),
+        interested_cryptos: interestedCryptos
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean),
+        birth_day: toISODate(birthDay),
+      };
+      await dispatch(createPerfil(payload)).unwrap();
+      toast.success("Perfil creado");
+      navigate("/dashboard");
+    } catch (err) {
+      toast.error("No se pudo crear el perfil");
+      console.error(err);
+    }
+  };
 
-  if ( loading )
-  {
-    return <div>Cargando...</div>;
-  }
+  const handleSavePrivacy = async () => {
+    if (!profile) return;
+    try {
+      const selected: HideKey[] = HIDE_FIELDS.filter(({ key }) => privacy[key]).map((f) => f.key);
+      await dispatch(
+        updateHiddenInformation({
+          username: profile.username,
+          hideInformation: selected,
+        })
+      ).unwrap();
+      toast.success("Privacidad actualizada");
+    } catch (err) {
+      toast.error("No se pudo actualizar la privacidad");
+      console.error(err);
+    }
+  };
 
-  if ( isProfileExist && perfil )
-  {
+  const togglePrivacy = (key: HideKey) =>
+    setPrivacy((prev) => ({ ...prev, [key]: !prev[key] }));
+
+  if (checking) {
     return (
-      <div className="mt-20">
-        <div className="flex items-center justify-center h-screen mt-6">
-          <div className="bg-white p-8 rounded shadow-md">
-            <h1 className="text-3xl font-bold mb-6 text-center text-blue-500">CryptoTradeExpress</h1>
-            <div className="mb-4">
-              <label className="block text-gray-700 font-bold mb-2 relative flex justify-between items-center p-2">
-                Nombre:
-                <input type="checkbox" className="absolute left-1/2 -translate-x-1/2 w-4 h-4 peer appearance-none rounded-md"
-                  checked={privacySettings["name"]}
-                  onChange={() => handlePrivacyChange( "name" )}
+      <div className="mx-auto mt-24 grid max-w-4xl grid-cols-1 gap-4 p-4">
+        {Array.from({ length: 3 }).map((_, i) => (
+          <div key={i} className="h-40 animate-pulse rounded-2xl bg-slate-200" />
+        ))}
+      </div>
+    );
+  }
+
+  if (hasProfile && profile) {
+    const rows: Array<{
+      key: HideKey;
+      label: string;
+      value: React.ReactNode;
+    }> = [
+        { key: "name", label: "Nombre", value: profile.name },
+        { key: "description", label: "Descripción", value: profile.description },
+        {
+          key: "interested_cryptos",
+          label: "Criptos de interés",
+          value: Array.isArray(profile.interested_cryptos)
+            ? profile.interested_cryptos.join(", ")
+            : "—",
+        },
+        { key: "birth_day", label: "Fecha de nacimiento", value: fmtDate(profile.birth_day) },
+        {
+          key: "videos_calification",
+          label: "Calificación promedio de videos",
+          value:
+            typeof profile.videos_calification === "number"
+              ? profile.videos_calification.toFixed(2)
+              : "—",
+        },
+        {
+          key: "friend_list",
+          label: "Amigos",
+          value: (profile as IPerfil).friend_list_count ?? 0,
+        },
+        { key: "date_joined", label: "Miembro desde", value: fmtDate(profile.date_joined) },
+      ];
+
+    return (
+      <div className="mx-auto mt-24 max-w-4xl p-4">
+        <div className="mb-6 text-center">
+          <h1 className="text-3xl font-extrabold tracking-tight text-indigo-900">
+            CryptoTradeExpress
+          </h1>
+          <p className="mt-1 text-sm text-slate-600">Configuración de privacidad del perfil</p>
+        </div>
+
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          {rows.map(({ key, label, value }) => (
+            <div key={key} className="flex items-start justify-between rounded-xl bg-white p-4 shadow ring-1 ring-slate-200">
+              <div>
+                <p className="text-sm font-medium text-slate-800">{label}</p>
+                <p className="mt-1 text-sm text-slate-600">{value ?? "—"}</p>
+              </div>
+              <label className="inline-flex cursor-pointer items-center">
+                <input
+                  type="checkbox"
+                  className="peer sr-only"
+                  checked={Boolean(privacy[key])}
+                  onChange={() => togglePrivacy(key)}
                 />
-                <span className="w-10 h-6 flex items-center flex-shrink-0 ml-4 p-1 bg-gray-300 rounded-full duration-300 ease-in-out peer-checked:bg-green-400 after:w-4 after:h-4 after:bg-white after:rounded-full after:shadow-md after:duration-300 peer-checked:after:translate-x-4"></span>
+                <span className="h-6 w-10 rounded-full bg-slate-300 transition peer-checked:bg-green-500" />
+                <span className="-ml-8 size-5 translate-x-0 rounded-full bg-white shadow transition peer-checked:translate-x-4" />
               </label>
-              <p className="text-gray-800 text-center"> {perfil.name}</p>
             </div>
-            <div className="mb-4">
-              <label className="block text-gray-700 font-bold mb-2 relative flex justify-between items-center p-2">
-                Descripcion:
-                <input type="checkbox" className="absolute left-1/2 -translate-x-1/2 w-4 h-4 peer appearance-none rounded-md"
-                  checked={privacySettings["description"]}
-                  onChange={() => handlePrivacyChange( "description" )}
-                />
-                <span className="w-10 h-6 flex items-center flex-shrink-0 ml-4 p-1 bg-gray-300 rounded-full duration-300 ease-in-out peer-checked:bg-green-400 after:w-4 after:h-4 after:bg-white after:rounded-full after:shadow-md after:duration-300 peer-checked:after:translate-x-4"></span>
-              </label>
-              <p className="text-gray-800 text-center">{perfil.description} </p>
-            </div>
-            <div className="mb-4">
-              <label className="block text-gray-700 font-bold mb-2 relative flex justify-between items-center p-2">
-                Cryptos de interes:
-                <input type="checkbox" className="absolute left-1/2 -translate-x-1/2 w-4 h-4 peer appearance-none rounded-md"
-                  checked={privacySettings["interested_cryptos"]}
-                  onChange={() => handlePrivacyChange( "interested_cryptos" )}
-                />
-                <span className="w-10 h-6 flex items-center flex-shrink-0 ml-4 p-1 bg-gray-300 rounded-full duration-300 ease-in-out peer-checked:bg-green-400 after:w-4 after:h-4 after:bg-white after:rounded-full after:shadow-md after:duration-300 peer-checked:after:translate-x-4"></span>
-              </label>
-              <p className="text-gray-800 text-center">{perfil.interested_cryptos.join( ', ' )} </p>
-            </div>
-            <div className="mb-4">
-              <label className="block text-gray-700 font-bold mb-2 relative flex justify-between items-center p-2">
-                Fecha de nacimiento:
-                <input type="checkbox" className="absolute left-1/2 -translate-x-1/2 w-4 h-4 peer appearance-none rounded-md"
-                  checked={privacySettings["birth_day"]}
-                  onChange={() => handlePrivacyChange( "birth_day" )}
-                />
-                <span className="w-10 h-6 flex items-center flex-shrink-0 ml-4 p-1 bg-gray-300 rounded-full duration-300 ease-in-out peer-checked:bg-green-400 after:w-4 after:h-4 after:bg-white after:rounded-full after:shadow-md after:duration-300 peer-checked:after:translate-x-4"></span>
-              </label>
-              <p className="text-gray-800 text-center">{perfil.birth_day}</p>
-            </div>
-            <div className="mb-4">
-              <label className="block text-gray-700 font-bold mb-2 relative flex justify-between items-center p-2">
-                Calificacion promedio de los Videos:
-                <input type="checkbox" className="absolute left-1/2 -translate-x-1/2 w-4 h-4 peer appearance-none rounded-md"
-                  checked={privacySettings["videos_calification"]}
-                  onChange={() => handlePrivacyChange( "videos_calification" )}
-                />
-                <span className="w-10 h-6 flex items-center flex-shrink-0 ml-4 p-1 bg-gray-300 rounded-full duration-300 ease-in-out peer-checked:bg-green-400 after:w-4 after:h-4 after:bg-white after:rounded-full after:shadow-md after:duration-300 peer-checked:after:translate-x-4"></span>
-              </label>
-              <p className="text-gray-800 text-center">{perfil.videos_calification}</p>
-            </div>
-            <div className="mb-4">
-              <label className="block text-gray-700 font-bold mb-2 relative flex justify-between items-center p-2">
-                Amigos:
-                <input type="checkbox" className="absolute left-1/2 -translate-x-1/2 w-4 h-4 peer appearance-none rounded-md"
-                  checked={privacySettings["friend_list"]}
-                  onChange={() => handlePrivacyChange( "friend_list" )}
-                />
-                <span className="w-10 h-6 flex items-center flex-shrink-0 ml-4 p-1 bg-gray-300 rounded-full duration-300 ease-in-out peer-checked:bg-green-400 after:w-4 after:h-4 after:bg-white after:rounded-full after:shadow-md after:duration-300 peer-checked:after:translate-x-4"></span>
-              </label>
-              <p className="text-gray-800 text-center">{perfil.friend_list_count}</p>
-            </div>
-            <div className="mb-4">
-              <label className="block text-gray-700 font-bold mb-2 relative flex justify-between items-center p-2">
-                Miembro desde:
-                <input type="checkbox" className="absolute left-1/2 -translate-x-1/2 w-4 h-4 peer appearance-none rounded-md"
-                  checked={privacySettings["date_joined"]}
-                  onChange={() => handlePrivacyChange( "date_joined" )}
-                />
-                <span className="w-10 h-6 flex items-center flex-shrink-0 ml-4 p-1 bg-gray-300 rounded-full duration-300 ease-in-out peer-checked:bg-green-400 after:w-4 after:h-4 after:bg-white after:rounded-full after:shadow-md after:duration-300 peer-checked:after:translate-x-4"></span>
-              </label>
-              <p className="text-gray-800 text-center">{formatJoinDate( perfil.date_joined )}</p>
-            </div>
-            <div className="mb-4 flex flex-row justify-between">
-              <button
-                type="button"
-                className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline mt-3 mr-2"
-                onClick={handleSubmitUpdate}
-              >
-                Modificar
-              </button>
-              <button
-                type="button"
-                className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline mt-3 mr-2"
-                onClick={handlePrivateInformations}
-              >
-                Privado
-              </button>
-              <button className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mt-3">
-                <Link to="/dashboard">Regresar</Link>
-              </button>
-            </div>
-            <div className="flex justify-center">
-              <button className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline mt-3 mr-2">
-                <Link to='/API'>Conectar con binance</Link>
-              </button>
-            </div>
-          </div>
+          ))}
+        </div>
+
+        <div className="mt-6 flex flex-wrap gap-3">
+          <button
+            type="button"
+            className="rounded-lg bg-indigo-600 px-4 py-2 font-semibold text-white shadow hover:bg-indigo-700"
+            onClick={handleSavePrivacy}
+            disabled={isLoading}
+          >
+            {isLoading ? "Guardando..." : "Guardar privacidad"}
+          </button>
+
+          <Link
+            to="/updatePerfil"
+            state={{ perfil: profile }}
+            className="rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white shadow hover:bg-blue-700"
+          >
+            Modificar
+          </Link>
+
+          <Link
+            to="/API"
+            className="rounded-lg bg-emerald-600 px-4 py-2 font-semibold text-white shadow hover:bg-emerald-700"
+          >
+            Conectar con Binance
+          </Link>
+
+          <Link
+            to="/dashboard"
+            className="rounded-lg bg-slate-700 px-4 py-2 font-semibold text-white shadow hover:bg-slate-800"
+          >
+            Regresar
+          </Link>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="flex items-center justify-center h-screen">
-      <form className="bg-white p-8 rounded shadow-md">
-        <h1 className="text-3xl font-bold mb-6 text-center text-blue-500">
+    <div className="mx-auto mt-24 max-w-xl p-4">
+      <div className="mb-6 text-center">
+        <h1 className="text-3xl font-extrabold tracking-tight text-indigo-900">
           CryptoTradeExpress
         </h1>
-        <input
-          id="name"
-          name="name"
-          type="name"
-          value={values.name}
-          onChange={handleChange}
-          placeholder="Nombre"
-          className="text-black w-full border p-2 mb-4 rounded-md focus:outline-none focus:border-blue-500"
-        />
-        <input
-          id="description"
-          name="description"
-          type="description"
-          value={values.description}
-          onChange={handleChange}
-          placeholder="Description"
-          className="text-black w-full border p-2 mb-4 rounded-md focus:outline-none focus:border-blue-500"
-        />
-        <input
-          id="interested_cryptos"
-          name="interested_cryptos"
-          type="interested_cryptos"
-          value={values.interested_cryptos}
-          onChange={handleChange}
-          placeholder="Cryptos de interes"
-          className="text-black w-full border p-2 mb-4 rounded-md focus:outline-none focus:border-blue-500"
-        />
-        <Datepicker options={optionsInicio} onChange={handleChangeBirthDay} show={showBirthDay} setShow={handleCloseBirthDay} />
-        <button
-          type="button"
-          className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline mt-3"
-          onClick={handleSubmit}
-        >
-          Crear
-        </button>
-        <button className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded ml-10">
-          <Link to="/dashboard">Regresar</Link>
-        </button>
-      </form>
+        <p className="mt-1 text-sm text-slate-600">Crea tu perfil</p>
+      </div>
+
+      <SectionCard title="Información básica">
+        <div className="space-y-4">
+          <div>
+            <label htmlFor="name" className="text-sm font-medium text-slate-700">
+              Nombre
+            </label>
+            <input
+              id="name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Tu nombre"
+              className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 outline-none ring-indigo-200 focus:ring"
+            />
+          </div>
+
+          <div>
+            <label htmlFor="description" className="text-sm font-medium text-slate-700">
+              Descripción
+            </label>
+            <input
+              id="description"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Cuéntanos sobre ti"
+              className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 outline-none ring-indigo-200 focus:ring"
+            />
+          </div>
+
+          <div>
+            <label htmlFor="interested_cryptos" className="text-sm font-medium text-slate-700">
+              Criptos de interés (separadas por coma)
+            </label>
+            <input
+              id="interested_cryptos"
+              value={interestedCryptos}
+              onChange={(e) => setInterestedCryptos(e.target.value)}
+              placeholder="BTC, ETH, SOL"
+              className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 outline-none ring-indigo-200 focus:ring"
+            />
+          </div>
+
+          <div>
+            <label className="text-sm font-medium text-slate-700">Fecha de nacimiento</label>
+            <div className="mt-1">
+              <Datepicker
+                options={datepickerOptions}
+                onChange={(d: Date) => setBirthDay(d)}
+                show={showBirthDay}
+                setShow={setShowBirthDay}
+              />
+              {birthDay && (
+                <p className="mt-2 text-xs text-slate-600">Seleccionada: {fmtDate(birthDay)}</p>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-6 flex flex-wrap gap-3">
+          <button
+            type="button"
+            onClick={handleCreate}
+            disabled={isLoading}
+            className="rounded-lg bg-indigo-600 px-4 py-2 font-semibold text-white shadow hover:bg-indigo-700 disabled:opacity-60"
+          >
+            {isLoading ? "Creando..." : "Crear"}
+          </button>
+
+          <Link
+            to="/dashboard"
+            className="rounded-lg bg-slate-700 px-4 py-2 font-semibold text-white shadow hover:bg-slate-800"
+          >
+            Regresar
+          </Link>
+        </div>
+      </SectionCard>
     </div>
   );
-}
-//   if (isProfileExist && perfil) {
-//     return (
-//       <div className="flex items-center justify-center h-screen mt-6">
-//         <div className="bg-white p-8 rounded shadow-md">
-//           <h1 className="text-3xl font-bold mb-6 text-center text-blue-500">CryptoTradeExpress</h1>
-//           <div className="mb-4">
-//             <label className="block text-gray-700 font-bold mb-2">Nombre:
-//             </label>
-//             <p className="text-gray-800">{perfil.name}</p>
-//           </div>
-//           <div className="mb-4">
-//             <label className="block text-gray-700 font-bold mb-2">Descripción:</label>
-//             <p className="text-gray-800">{perfil.description}</p>
-//           </div>
-//           <div className="mb-4">
-//             <label className="block text-gray-700 font-bold mb-2">Cryptos de interés:</label>
-//             <p className="text-gray-800">{perfil.interested_cryptos.join(', ')}</p>
-//           </div>
-//           <div className="mb-4">
-//             <label className="block text-gray-700 font-bold mb-2">Fecha de nacimiento:</label>
-//             <p className="text-gray-800">{perfil.birth_day}</p>
-//           </div>
-//           <div className="mb-4">
-//             <label className="block text-gray-700 font-bold mb-2">Calificacion promedio de los Videos:</label>
-//             <p className="text-gray-800">{perfil.videos_calification}</p>
-//           </div>
-//           <div className="mb-4">
-//             <label className="block text-gray-700 font-bold mb-2">Amigos:</label>
-//             <p className="text-gray-800">{perfil.friend_list_count}</p>
-//           </div>
-//           <div className="mb-4">
-//             <label className="block text-gray-700 font-bold mb-2">Miembro desde:</label>
-//             <p className="text-gray-800">{formatJoinDate(perfil.date_joined) }</p>
-//           </div>
-//           <button
-//             type="button"
-//             className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline mt-3 mr-2"
-//             onClick={handleSubmitUpdate}
-//           >
-//           Modificar
-//           </button>
-//           <button className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mt-3">
-//             <Link to="/dashboard">Regresar</Link>
-//           </button>
-//         </div>
-//       </div>
-//     );
-//  }
+};
+
+export default CreatePerfilPage;
