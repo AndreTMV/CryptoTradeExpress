@@ -4,30 +4,37 @@ import { toast } from "react-hot-toast";
 import { useDispatch, useSelector } from "react-redux";
 
 import type { RootState, AppDispatch } from "../../app/store";
+import { seePublicInfo } from "../../features/perfil/perfilSlice";
 import {
-  seePublicInfo,
-} from "../../features/perfil/perfilSlice";
-import {
-  areFriends,
+  areFriends as areFriendsThunk,
   removeFriend,
   sendFriendRequest,
-  friendRequestStatus,
+  friendRequestStatus as friendRequestStatusThunk,
   cancelFriendRequest,
   friendReset,
 } from "../../features/amigos/friendSlice";
 
 type PublicPerfil = {
+  id?: number;
+  username?: string;
   name?: string;
   description?: string;
   interested_cryptos?: string[];
-  birth_day?: string;
-  videos_calification?: number;
+  birth_day?: string | null;
+  videos_calification?: number | null;
   friend_list?: number;
-  date_joined?: string;
+  friend_List?: number; // por si el backend lo manda con L mayúscula
+  date_joined?: string | null;
 };
 
-const fmtDate = (s?: string) =>
-  s ? new Date(s).toLocaleDateString() : "—";
+const fmtDate = (s?: string | null) => (s ? new Date(s).toLocaleDateString() : "—");
+
+const Item: React.FC<{ label: string; value: React.ReactNode }> = ({ label, value }) => (
+  <div>
+    <div className="text-sm font-semibold text-slate-700">{label}</div>
+    <div className="text-slate-800">{value}</div>
+  </div>
+);
 
 const SeeProfile: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
@@ -35,25 +42,30 @@ const SeeProfile: React.FC = () => {
   const { id: paramId } = useParams<{ id: string }>();
 
   const { userInfo } = useSelector((s: RootState) => s.auth);
-  const { perfil: perfilPublico, perfilIsLoading, perfilIsError, perfilMessage } =
-    useSelector((s: RootState) => s.perfil);
-  const { isLoading: friendLoading, isError: friendError, message: friendMsg } =
-    useSelector((s: RootState) => s.friends);
+
+  const {
+    publicProfile,
+    isLoading: perfilIsLoading,
+    isError: perfilIsError,
+    message: perfilMessage,
+  } = useSelector((s: RootState) => s.perfil);
+
+  const {
+    isLoading: friendLoading,
+    isError: friendIsError,
+    message: friendMessage,
+  } = useSelector((s: RootState) => s.friends);
+
+  const viewingUserId = React.useMemo(() => (paramId ? Number(paramId) : null), [paramId]);
+  const myUserId = userInfo?.id ?? null;
+  const isMe = Boolean(viewingUserId && myUserId && viewingUserId === myUserId);
 
   const [areFriendsState, setAreFriendsState] = React.useState(false);
   const [hasPendingRequest, setHasPendingRequest] = React.useState(false);
 
-  const viewingUserId = React.useMemo(
-    () => (paramId ? Number(paramId) : null),
-    [paramId]
-  );
-  const myUserId = userInfo?.id ?? null;
-  const isMe = viewingUserId && myUserId && viewingUserId === myUserId;
-
   React.useEffect(() => {
     if (!viewingUserId) return;
-
-    void dispatch(seePublicInfo({ id: viewingUserId }));
+    dispatch(seePublicInfo({ id: viewingUserId }));
   }, [dispatch, viewingUserId]);
 
   React.useEffect(() => {
@@ -61,18 +73,20 @@ const SeeProfile: React.FC = () => {
       if (!myUserId || !viewingUserId || isMe) return;
 
       try {
-        const friendsData = { user: myUserId, see_user: viewingUserId };
-        const areRes = await dispatch(areFriends(friendsData)).unwrap();
-        setAreFriendsState(Boolean(areRes?.friends));
+        const areBool = await dispatch(
+          areFriendsThunk({ user: myUserId, see_user: viewingUserId })
+        ).unwrap();
+        setAreFriendsState(Boolean(areBool));
 
-        const reqData = { user: myUserId, receiver: viewingUserId };
-        const reqRes = await dispatch(friendRequestStatus(reqData)).unwrap();
-        setHasPendingRequest(Boolean(reqRes?.status));
+        const reqExists = await dispatch(
+          friendRequestStatusThunk({ user: myUserId, receiver: viewingUserId })
+        ).unwrap();
+        setHasPendingRequest(Boolean(reqExists));
       } catch (err) {
         console.error("Estado de amistad/solicitud no disponible:", err);
       }
     };
-    void run();
+    run();
 
     return () => {
       dispatch(friendReset());
@@ -80,19 +94,17 @@ const SeeProfile: React.FC = () => {
   }, [dispatch, myUserId, viewingUserId, isMe]);
 
   React.useEffect(() => {
-    if (perfilIsError && perfilMessage) toast.error(perfilMessage);
+    if (perfilIsError && perfilMessage) toast.error(String(perfilMessage));
   }, [perfilIsError, perfilMessage]);
 
   React.useEffect(() => {
-    if (friendError && friendMsg) toast.error(String(friendMsg));
-  }, [friendError, friendMsg]);
+    if (friendIsError && friendMessage) toast.error(String(friendMessage));
+  }, [friendIsError, friendMessage]);
 
   const handleRemoveFriend = async () => {
     if (!myUserId || !viewingUserId) return;
     try {
-      await dispatch(
-        removeFriend({ user: myUserId, receiver_id: viewingUserId })
-      ).unwrap();
+      await dispatch(removeFriend({ user: myUserId, receiver_id: viewingUserId })).unwrap();
       setAreFriendsState(false);
       setHasPendingRequest(false);
       toast.success("Amigo eliminado");
@@ -105,9 +117,7 @@ const SeeProfile: React.FC = () => {
   const handleSendRequest = async () => {
     if (!myUserId || !viewingUserId) return;
     try {
-      await dispatch(
-        sendFriendRequest({ user: myUserId, receiver_user_id: viewingUserId })
-      ).unwrap();
+      await dispatch(sendFriendRequest({ user: myUserId, receiver_user_id: viewingUserId })).unwrap();
       setHasPendingRequest(true);
       toast.success("Solicitud enviada");
     } catch (err) {
@@ -119,9 +129,7 @@ const SeeProfile: React.FC = () => {
   const handleCancelRequest = async () => {
     if (!myUserId || !viewingUserId) return;
     try {
-      await dispatch(
-        cancelFriendRequest({ user: myUserId, receiver_id: viewingUserId })
-      ).unwrap();
+      await dispatch(cancelFriendRequest({ user: myUserId, receiver_id: viewingUserId })).unwrap();
       setHasPendingRequest(false);
       toast.success("Solicitud cancelada");
     } catch (err) {
@@ -140,48 +148,36 @@ const SeeProfile: React.FC = () => {
     );
   }
 
-  const p = (perfilPublico || {}) as PublicPerfil;
+  const p = (publicProfile || {}) as PublicPerfil;
+  const title = p.name || p.username || "Perfil";
+  const friendsCount = (p as any).friend_list ?? (p as any).friend_List ?? 0;
 
   return (
     <div className="mx-auto mt-20 max-w-xl p-4">
       <div className="rounded-2xl bg-white p-6 shadow ring-1 ring-slate-200">
         <h1 className="mb-4 text-center text-2xl font-extrabold tracking-tight text-indigo-900">
-          CryptoTradeExpress
+          {title}
         </h1>
 
         {/* Datos públicos */}
         <div className="space-y-3">
-          {p.name && (
-            <Item label="Nombre" value={p.name} />
-          )}
-          {p.description && (
-            <Item label="Descripción" value={p.description} />
-          )}
+          {p.description && <Item label="Descripción" value={p.description} />}
           {Array.isArray(p.interested_cryptos) && p.interested_cryptos.length > 0 && (
-            <Item
-              label="Criptos de interés"
-              value={p.interested_cryptos.join(", ")}
-            />
+            <Item label="Criptos de interés" value={p.interested_cryptos.join(", ")} />
           )}
-          {"birth_day" in p && (
-            <Item label="Fecha de nacimiento" value={fmtDate(p.birth_day)} />
-          )}
+          {"birth_day" in p && <Item label="Fecha de nacimiento" value={fmtDate(p.birth_day)} />}
           {"videos_calification" in p && (
             <Item
               label="Calificación promedio de los videos"
-              value={p.videos_calification?.toFixed(2) ?? "—"}
+              value={p.videos_calification != null ? p.videos_calification.toFixed(2) : "—"}
             />
           )}
-          {("friend_list" in p) && (
-            <Item label="Amigos" value={String(p.friend_list ?? 0)} />
-          )}
-          {"date_joined" in p && (
-            <Item label="Miembro desde" value={fmtDate(p.date_joined)} />
-          )}
+          <Item label="Amigos" value={String(friendsCount)} />
+          {"date_joined" in p && <Item label="Miembro desde" value={fmtDate(p.date_joined)} />}
         </div>
 
         {/* Acciones de amistad (ocultar si es mi propio perfil) */}
-        {!isMe && (
+        {!isMe ? (
           <div className="mt-6 flex flex-wrap items-center gap-3">
             {areFriendsState ? (
               <button
@@ -216,9 +212,7 @@ const SeeProfile: React.FC = () => {
               Regresar
             </Link>
           </div>
-        )}
-
-        {isMe && (
+        ) : (
           <div className="mt-6">
             <Link
               to="/dashboard"
@@ -232,12 +226,5 @@ const SeeProfile: React.FC = () => {
     </div>
   );
 };
-
-const Item: React.FC<{ label: string; value: React.ReactNode }> = ({ label, value }) => (
-  <div>
-    <div className="text-sm font-semibold text-slate-700">{label}</div>
-    <div className="text-slate-800">{value}</div>
-  </div>
-);
 
 export default SeeProfile;

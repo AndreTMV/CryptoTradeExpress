@@ -78,7 +78,6 @@ function AppRoutes() {
           <Route path="/reset-password" element={<ResetPasswordPage />} />
           <Route path="/password/reset/confirm/:uid/:token" element={<ResetPasswordPageConfirm />} />
           <Route path="/activate/:uid/:token" element={<ActivationPage />} />
-          <Route path="*" element={<NotFoundPage />} />
         </Routes>
         <Toaster />
       </div>
