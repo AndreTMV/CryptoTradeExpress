@@ -1,134 +1,77 @@
-import  axios  from 'axios';
+import api from "../../api/axiosInstance";
+import type {
+  ByUserDTO, BuySellDTO, UpdateDateDTO, MorePredictionsDTO,
+  Simulacion, PrecioBTC, Transaccion
+} from "./types";
 
-const BACKEND_DOMAIN = "http://localhost:8000";
-const FETCH_SIMULACION = `${BACKEND_DOMAIN}/simulador/api/v1/simulacion/`;
-const FETCH_TRANSACCIONES = `${BACKEND_DOMAIN}/simulador/api/v1/transacciones/`;
-const FETCH_PRECIOS_BITCOIN = `${BACKEND_DOMAIN}/simulador/api/v1/precios/`;
-const START_SIMULATION = `${BACKEND_DOMAIN}/simulador/api/v1/iniciar/`;
-const AVANZAR_API = `${BACKEND_DOMAIN}/simulador/api/v1/avanzar/`;
-const COMPRAR_API = `${BACKEND_DOMAIN}/simulador/api/v1/comprar/`;
-const VENDER_API = `${BACKEND_DOMAIN}/simulador/api/v1/vender/`;
-const REINICIAR_API = `${BACKEND_DOMAIN}/simulador/api/v1/reiniciar/`;
-const PREDECIR_API = `${BACKEND_DOMAIN}/simulador/api/v1/predicciones/`;
-const UPDATE_DATE = `${BACKEND_DOMAIN}/simulador/api/v1/actualizar_fecha/`;
-const MORE_PREDICTIONS = `${BACKEND_DOMAIN}/simulador/api/v1/more_predictions/`;
+const ROOT = "/simulador/api/v1";
 
-const obtenerSimulacion = async (simulationData:any) => {
-    const config = {
-        params: {
-            user:simulationData.user
-        }
-    }
-    const response = await axios.get(FETCH_SIMULACION, config)
-    return response.data
+export const obtenerSimulacion = async (params: ByUserDTO): Promise<Simulacion> => {
+  const { data } = await api.get<Simulacion>(`${ROOT}/simulacion/`, { params });
+  return data;
 };
 
-const obtenerTransacciones = async (simulationData:any) => {
-    const config = {
-        params: {
-            user:simulationData.user
-        }
-    }
-    const response = await axios.get(FETCH_TRANSACCIONES, config);
-    return response.data;
+export const obtenerTransacciones = async (params: ByUserDTO): Promise<Transaccion[]> => {
+  const { data } = await api.get<Transaccion[]>(`${ROOT}/transacciones/`, { params });
+  return Array.isArray(data) ? data : [];
 };
 
-const obtenerPreciosBitcoin = async (simulationData:any) => {
-    const config = {
-        params: {
-            user:simulationData.user
-        }
-    }
-    const response = await axios.get(FETCH_PRECIOS_BITCOIN, config);
-    return response.data;
+export const obtenerPreciosBitcoin = async (params: ByUserDTO): Promise<PrecioBTC[]> => {
+  const { data } = await api.get<PrecioBTC[]>(`${ROOT}/precios/`, { params });
+  return Array.isArray(data) ? data : [];
 };
 
-const iniciarSimulacion = async (simulacionData:any) => {
-    const config = {
-        headers: {
-            "Content-Type": "application/json"
-        }
-    };
-    const response = await axios.post(START_SIMULATION, simulacionData, config);
-    return response.data;
+export const iniciarSimulacion = async (body: ByUserDTO): Promise<Simulacion> => {
+  const { data } = await api.post<Simulacion>(`${ROOT}/iniciar/`, body);
+  return data;
 };
 
-const avanzarSimulacion = async (simulacionData:any) => {
-    const config = {
-        headers: {
-            "Content-Type": "application/json"
-        }
-    };
-    const response = await axios.post(AVANZAR_API, simulacionData, config);
-    return response.data;
+export const reiniciarSimulacion = async (body: ByUserDTO): Promise<Simulacion> => {
+  const { data } = await api.post<Simulacion>(`${ROOT}/reiniciar/`, body);
+  return data;
 };
 
-const comprarBitcoin = async (simulacionData: any) => {
-    const config = {
-        headers: {
-            "Content-Type": "application/json"
-        }
-    };
-    const response = await axios.post(COMPRAR_API, simulacionData, config);
-    return response.data;
+export const avanzarSimulacion = async (body: ByUserDTO): Promise<Simulacion> => {
+  const { data } = await api.post<Simulacion>(`${ROOT}/avanzar/`, body);
+  return data;
 };
 
-const venderBitcoin = async (simulacionData: any) => {
-    const config = {
-        headers: {
-            "Content-Type": "application/json"
-        },
-    };
-    const response = await axios.post(VENDER_API, simulacionData, config);
-    return response.data;
+export const comprarBitcoin = async (body: BuySellDTO): Promise<Simulacion> => {
+  const { data } = await api.post<Simulacion>(`${ROOT}/comprar/`, body);
+  return data;
 };
 
-const reiniciarSimulacion = async (simulacionData:any) => {
-    const config = {
-        headers: {
-            "Content-Type": "application/json"
-        },
-    };
-    const response = await axios.post(REINICIAR_API, simulacionData, config);
-    return response.data;
+export const venderBitcoin = async (body: BuySellDTO): Promise<Simulacion> => {
+  const { data } = await api.post<Simulacion>(`${ROOT}/vender/`, body);
+  return data;
 };
 
-const predecirPrecios = async () => {
-    const response = await axios.get(PREDECIR_API);
-    return response.data;
+export const predecirPrecios = async (): Promise<number[]> => {
+  const { data } = await api.get<number[]>(`${ROOT}/predicciones/`);
+  return Array.isArray(data) ? data : [];
 };
 
-const updateDate = async (simulacionData:any) => {
-    const config = {
-        headers: {
-            "Content-Type": "application/json"
-        }
-    };
-    const response = await axios.put(UPDATE_DATE, simulacionData, config);
-    return response.data;
+export const updateDate = async (body: UpdateDateDTO): Promise<Simulacion> => {
+  const { data } = await api.put<Simulacion>(`${ROOT}/actualizar_fecha/`, body);
+  return data;
 };
 
-const morePredictions = async (simulacionData:any) => {
-    const config = {
-        headers: {
-            "Content-Type": "application/json"
-        }
-    };
-    const response = await axios.post(MORE_PREDICTIONS, simulacionData, config);
-    return response.data;
+export const morePredictions = async (body: MorePredictionsDTO): Promise<Simulacion> => {
+  const { data } = await api.post<Simulacion>(`${ROOT}/more_predictions/`, body);
+  return data;
 };
+
 const simuladorService = {
-    obtenerSimulacion,
-    obtenerTransacciones,
-    obtenerPreciosBitcoin,
-    iniciarSimulacion,
-    avanzarSimulacion,
-    comprarBitcoin,
-    venderBitcoin,
-    reiniciarSimulacion,
-    predecirPrecios,
-    updateDate,
-    morePredictions
+  obtenerSimulacion,
+  obtenerTransacciones,
+  obtenerPreciosBitcoin,
+  iniciarSimulacion,
+  reiniciarSimulacion,
+  avanzarSimulacion,
+  comprarBitcoin,
+  venderBitcoin,
+  predecirPrecios,
+  updateDate,
+  morePredictions,
 };
-
 export default simuladorService;

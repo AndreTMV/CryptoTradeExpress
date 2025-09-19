@@ -1,346 +1,187 @@
-import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
-import simuladorService from './simuladorService';
-
-interface SimuladorState {
-    simulacion: any;
-    preciosBitcoin: any,
-    simulacionIsError: boolean;
-    simulacionIsSuccess: boolean;
-    simulacionIsLoading: boolean;
-    simulacionMessage: string;
-}
+import { createSlice, createAsyncThunk, type PayloadAction, isAnyOf } from "@reduxjs/toolkit";
+import simuladorService from "./simuladorService";
+import type {
+  SimuladorState, Simulacion, PrecioBTC, Transaccion,
+  ByUserDTO, BuySellDTO, UpdateDateDTO, MorePredictionsDTO
+} from "./types";
+import { AxiosError } from "axios";
 
 const initialState: SimuladorState = {
-    simulacion: {},
-    preciosBitcoin: [],
-    simulacionIsError: false,
-    simulacionIsSuccess: false,
-    simulacionIsLoading: false,
-    simulacionMessage: '',
+  current: null,
+  prices: [],
+  transactions: [],
+  predictions: [],
+  loading: false,
+  success: false,
+  error: undefined,
 };
 
-export const startSimulation = createAsyncThunk(
-    "simulacion/startSimulation",
-    async (simulacionData: any, thunkAPI) => {
-        try {
-            return await simuladorService.iniciarSimulacion(simulacionData);
-        } catch (error) {
-            const message = (error.response && error.response.data && error.response.data.message) ||
-                error.message || error.toString();
-            return thunkAPI.rejectWithValue(message);
-        }
-    }
+const getErr = (e: unknown) => {
+  const ax = e as AxiosError<any>;
+  return (ax?.response?.data?.error ?? ax?.response?.data?.status ?? ax?.message ?? "Error inesperado") as string;
+};
+
+export const startSimulation = createAsyncThunk<Simulacion, ByUserDTO, { rejectValue: string }>(
+  "sim/start",
+  async (payload, { rejectWithValue }) => {
+    try { return await simuladorService.iniciarSimulacion(payload); }
+    catch (e) { return rejectWithValue(getErr(e)); }
+  }
 );
 
-export const fetchSimulation = createAsyncThunk(
-    "simulacion/fetchSimulation",
-    async (simulacionData: any, thunkAPI) => {
-        try {
-            return await simuladorService.obtenerSimulacion(simulacionData);
-        } catch (error) {
-            const message = (error.response && error.response.data && error.response.data.message) ||
-                error.message || error.toString();
-            return thunkAPI.rejectWithValue(message);
-        }
-    }
+export const resetSimulation = createAsyncThunk<Simulacion, ByUserDTO, { rejectValue: string }>(
+  "sim/reset",
+  async (payload, { rejectWithValue }) => {
+    try { return await simuladorService.reiniciarSimulacion(payload); }
+    catch (e) { return rejectWithValue(getErr(e)); }
+  }
 );
 
-export const getPredictions = createAsyncThunk(
-    "simulacion/getPredictions",
-    async (_, thunkAPI) => {
-        try {
-            return await simuladorService.predecirPrecios();
-        } catch (error) {
-            const message = (error.response && error.response.data && error.response.data.message) ||
-                error.message || error.toString();
-            return thunkAPI.rejectWithValue(message);
-        }
-    }
+export const fetchSimulation = createAsyncThunk<Simulacion, ByUserDTO, { rejectValue: string }>(
+  "sim/fetch",
+  async (payload, { rejectWithValue }) => {
+    try { return await simuladorService.obtenerSimulacion(payload); }
+    catch (e) { return rejectWithValue(getErr(e)); }
+  }
 );
 
-export const getTransactions = createAsyncThunk(
-    "simulacion/getTransactions",
-    async (simulacionData: any, thunkAPI) => {
-        try {
-            return await simuladorService.obtenerTransacciones(simulacionData);
-        } catch (error) {
-            const message = (error.response && error.response.data && error.response.data.message) ||
-                error.message || error.toString();
-            return thunkAPI.rejectWithValue(message);
-        }
-    }
+export const getBitcoinPrices = createAsyncThunk<PrecioBTC[], ByUserDTO, { rejectValue: string }>(
+  "sim/prices",
+  async (payload, { rejectWithValue }) => {
+    try { return await simuladorService.obtenerPreciosBitcoin(payload); }
+    catch (e) { return rejectWithValue(getErr(e)); }
+  }
 );
 
-export const getBitcoinPrices = createAsyncThunk(
-    "simulacion/getBitcoinPrices",
-    async (simulationData, thunkAPI) => {
-        try {
-            return await simuladorService.obtenerPreciosBitcoin(simulationData);
-        } catch (error) {
-            const message = (error.response && error.response.data && error.response.data.message) ||
-                error.message || error.toString();
-            return thunkAPI.rejectWithValue(message);
-        }
-    }
+export const getTransactions = createAsyncThunk<Transaccion[], ByUserDTO, { rejectValue: string }>(
+  "sim/transactions",
+  async (payload, { rejectWithValue }) => {
+    try { return await simuladorService.obtenerTransacciones(payload); }
+    catch (e) { return rejectWithValue(getErr(e)); }
+  }
 );
 
-export const advanceSimulation = createAsyncThunk(
-    "simulacion/advanceSimulation",
-    async (simulacionData: any, thunkAPI) => {
-        try {
-            return await simuladorService.avanzarSimulacion(simulacionData);
-        } catch (error) {
-            const message = (error.response && error.response.data && error.response.data.message) ||
-                error.message || error.toString();
-            return thunkAPI.rejectWithValue(message);
-        }
-    }
+export const advanceSimulation = createAsyncThunk<Simulacion, ByUserDTO, { rejectValue: string }>(
+  "sim/advance",
+  async (payload, { rejectWithValue }) => {
+    try { return await simuladorService.avanzarSimulacion(payload); }
+    catch (e) { return rejectWithValue(getErr(e)); }
+  }
 );
 
-export const buyBitcoin = createAsyncThunk(
-    "simulacion/buyBitcoin",
-    async (simulacionData: any, thunkAPI) => {
-        try {
-            return await simuladorService.comprarBitcoin(simulacionData);
-        } catch (error) {
-            const message = (error.response && error.response.data && error.response.data.message) ||
-                error.message || error.toString();
-            return thunkAPI.rejectWithValue(message);
-        }
-    }
+export const buyBitcoin = createAsyncThunk<Simulacion, BuySellDTO, { rejectValue: string }>(
+  "sim/buy",
+  async (payload, { rejectWithValue }) => {
+    try { return await simuladorService.comprarBitcoin(payload); }
+    catch (e) { return rejectWithValue(getErr(e)); }
+  }
 );
 
-export const sellBitcoin = createAsyncThunk(
-    "simulacion/sellBitcoin",
-    async (simulacionData: any, thunkAPI) => {
-        try {
-            return await simuladorService.venderBitcoin(simulacionData);
-        } catch (error) {
-            const message = (error.response && error.response.data && error.response.data.message) ||
-                error.message || error.toString();
-            return thunkAPI.rejectWithValue(message);
-        }
-    }
+export const sellBitcoin = createAsyncThunk<Simulacion, BuySellDTO, { rejectValue: string }>(
+  "sim/sell",
+  async (payload, { rejectWithValue }) => {
+    try { return await simuladorService.venderBitcoin(payload); }
+    catch (e) { return rejectWithValue(getErr(e)); }
+  }
 );
 
-export const resetSimulation = createAsyncThunk(
-    "simulacion/resetSimulation",
-    async (simulacionData: any, thunkAPI) => {
-        try {
-            return await simuladorService.reiniciarSimulacion(simulacionData);
-        } catch (error) {
-            const message = (error.response && error.response.data && error.response.data.message) ||
-                error.message || error.toString();
-            return thunkAPI.rejectWithValue(message);
-        }
-    }
+export const getPredictions = createAsyncThunk<number[], void, { rejectValue: string }>(
+  "sim/predictions",
+  async (_, { rejectWithValue }) => {
+    try { return await simuladorService.predecirPrecios(); }
+    catch (e) { return rejectWithValue(getErr(e)); }
+  }
 );
 
-export const updateDate = createAsyncThunk(
-    "simulacion/updateDate",
-    async (simulacionData: any, thunkAPI) => {
-        try {
-            return await simuladorService.updateDate(simulacionData);
-        } catch (error) {
-            const message = (error.response && error.response.data && error.response.data.message) ||
-                error.message || error.toString();
-            return thunkAPI.rejectWithValue(message);
-        }
-    }
+export const updateDate = createAsyncThunk<Simulacion, UpdateDateDTO, { rejectValue: string }>(
+  "sim/updateDate",
+  async (payload, { rejectWithValue }) => {
+    try { return await simuladorService.updateDate(payload); }
+    catch (e) { return rejectWithValue(getErr(e)); }
+  }
 );
 
-export const morePredictions = createAsyncThunk(
-    "simulacion/morePredictions",
-    async (simulacionData: any, thunkAPI) => {
-        try {
-            return await simuladorService.morePredictions(simulacionData);
-        } catch (error) {
-            const message = (error.response && error.response.data && error.response.data.message) ||
-                error.message || error.toString();
-            return thunkAPI.rejectWithValue(message);
-        }
-    }
+export const morePredictions = createAsyncThunk<Simulacion, MorePredictionsDTO, { rejectValue: string }>(
+  "sim/morePredictions",
+  async (payload, { rejectWithValue }) => {
+    try { return await simuladorService.morePredictions(payload); }
+    catch (e) { return rejectWithValue(getErr(e)); }
+  }
 );
 
-export const simulacionSlice = createSlice({
-    name: "simulation",
-    initialState,
-    reducers: {
-        reset: (state) => {
-            state.simulacionIsError = false;
-            state.simulacionIsLoading = false;
-            state.simulacionIsSuccess = false;
-            state.simulacionMessage = '';
-        },
-        clearPredictions: ( state ) =>
-        { 
-            state.preciosBitcoin = []
-        }
+const simulacionSlice = createSlice({
+  name: "simulation",
+  initialState,
+  reducers: {
+    reset(state) {
+      state.loading = false;
+      state.success = false;
+      state.error = undefined;
     },
-    extraReducers: (builder) => {
-        builder
-            .addCase(getPredictions.pending, (state) => {
-                state.simulacionIsLoading = true;
-            })
-            .addCase(getPredictions.fulfilled, (state, action) => {
-                state.simulacionIsSuccess = true;
-                state.simulacionIsLoading = false;
-                state.simulacion = action.payload;
-            })
-            .addCase(getPredictions.rejected, (state, action) => {
-                state.simulacionIsError = true;
-                state.simulacionIsLoading = false;
-                state.simulacionIsSuccess = false;
-                state.simulacionMessage = action.payload;
-            })
-            .addCase(startSimulation.pending, (state) => {
-                state.simulacionIsLoading = true;
-            })
-            .addCase(startSimulation.fulfilled, (state, action) => {
-                state.simulacionIsSuccess = true;
-                state.simulacionIsLoading = false;
-                state.simulacion = action.payload;
-            })
-            .addCase(startSimulation.rejected, (state, action) => {
-                state.simulacionIsError = true;
-                state.simulacionIsLoading = false;
-                state.simulacionIsSuccess = false;
-                state.simulacionMessage = action.payload;
-            })
-            .addCase(fetchSimulation.pending, (state) => {
-                state.simulacionIsLoading = true;
-            })
-            .addCase(fetchSimulation.fulfilled, (state, action) => {
-                state.simulacionIsSuccess = true;
-                state.simulacionIsLoading = false;
-                state.simulacion = action.payload;
-            })
-            .addCase(fetchSimulation.rejected, (state, action) => {
-                state.simulacionIsError = true;
-                state.simulacionIsLoading = false;
-                state.simulacionIsSuccess = false;
-                state.simulacionMessage = action.payload;
-            })
-            .addCase(getTransactions.pending, (state) => {
-                state.simulacionIsLoading = true;
-            })
-            .addCase(getTransactions.fulfilled, (state, action) => {
-                state.simulacionIsSuccess = true;
-                state.simulacionIsLoading = false;
-                state.simulacion = action.payload;
-            })
-            .addCase(getTransactions.rejected, (state, action) => {
-                state.simulacionIsError = true;
-                state.simulacionIsLoading = false;
-                state.simulacionIsSuccess = false;
-                state.simulacionMessage = action.payload;
-            })
-            .addCase(getBitcoinPrices.pending, (state) => {
-                state.simulacionIsLoading = true;
-            })
-            .addCase(getBitcoinPrices.fulfilled, (state, action) => {
-                state.simulacionIsSuccess = true;
-                state.simulacionIsLoading = false;
-                state.preciosBitcoin = action.payload;
-                state.preciosBitcoin.sort((a, b) => {
-                    const dateA = new Date(a.fecha);
-                    const dateB = new Date(b.fecha);
-                    return dateA.getTime() - dateB.getTime();
-                });
-            })
-            .addCase(getBitcoinPrices.rejected, (state, action) => {
-                state.simulacionIsError = true;
-                state.simulacionIsLoading = false;
-                state.simulacionIsSuccess = false;
-                state.simulacionMessage = action.payload;
-            })
-            .addCase(advanceSimulation.pending, (state) => {
-                state.simulacionIsLoading = true;
-            })
-            .addCase(advanceSimulation.fulfilled, (state, action) => {
-                state.simulacionIsSuccess = true;
-                state.simulacionIsLoading = false;
-                state.simulacion = action.payload;
-            })
-            .addCase(advanceSimulation.rejected, (state, action) => {
-                state.simulacionIsError = true;
-                state.simulacionIsLoading = false;
-                state.simulacionIsSuccess = false;
-                state.simulacionMessage = action.payload;
-            })
-            .addCase(buyBitcoin.pending, (state) => {
-                state.simulacionIsLoading = true;
-            })
-            .addCase(buyBitcoin.fulfilled, (state, action) => {
-                state.simulacionIsSuccess = true;
-                state.simulacionIsLoading = false;
-                state.simulacion = action.payload;
-            })
-            .addCase(buyBitcoin.rejected, (state, action) => {
-                state.simulacionIsError = true;
-                state.simulacionIsLoading = false;
-                state.simulacionIsSuccess = false;
-                state.simulacionMessage = action.payload;
-            })
-            .addCase(sellBitcoin.pending, (state) => {
-                state.simulacionIsLoading = true;
-            })
-            .addCase(sellBitcoin.fulfilled, (state, action) => {
-                state.simulacionIsSuccess = true;
-                state.simulacionIsLoading = false;
-                state.simulacion = action.payload;
-            })
-            .addCase(sellBitcoin.rejected, (state, action) => {
-                state.simulacionIsError = true;
-                state.simulacionIsLoading = false;
-                state.simulacionIsSuccess = false;
-                state.simulacionMessage = action.payload;
-            })
-            .addCase(resetSimulation.pending, (state) => {
-                state.simulacionIsLoading = true;
-            })
-            .addCase(resetSimulation.fulfilled, (state, action) => {
-                state.simulacionIsSuccess = true;
-                state.simulacionIsLoading = false;
-                state.simulacion = action.payload;
-            })
-            .addCase(resetSimulation.rejected, (state, action) => {
-                state.simulacionIsError = true;
-                state.simulacionIsLoading = false;
-                state.simulacionIsSuccess = false;
-                state.simulacionMessage = action.payload;
-            })
-            .addCase(updateDate.pending, (state) => {
-                state.simulacionIsLoading = true;
-            })
-            .addCase(updateDate.fulfilled, (state, action) => {
-                state.simulacionIsSuccess = true;
-                state.simulacionIsLoading = false;
-                state.simulacion = action.payload;
-            })
-            .addCase(updateDate.rejected, (state, action) => {
-                state.simulacionIsError = true;
-                state.simulacionIsLoading = false;
-                state.simulacionIsSuccess = false;
-                state.simulacionMessage = action.payload;
-            })
-            .addCase(morePredictions.pending, (state) => {
-                state.simulacionIsLoading = true;
-            })
-            .addCase(morePredictions.fulfilled, (state, action) => {
-                state.simulacionIsSuccess = true;
-                state.simulacionIsLoading = false;
-                state.simulacion = action.payload;
-            })
-            .addCase(morePredictions.rejected, (state, action) => {
-                state.simulacionIsError = true;
-                state.simulacionIsLoading = false;
-                state.simulacionIsSuccess = false;
-                state.simulacionMessage = action.payload;
-            });
-    }
+    clearPredictions(state) {
+      state.predictions = [];
+    },
+  },
+  extraReducers: (builder) => {
+    builder
+      .addCase(startSimulation.fulfilled, (s, a: PayloadAction<Simulacion>) => {
+        s.current = a.payload; s.success = true; s.loading = false;
+      })
+      .addCase(resetSimulation.fulfilled, (s, a: PayloadAction<Simulacion>) => {
+        s.current = a.payload; s.success = true; s.loading = false;
+        s.prices = []; s.transactions = []; s.predictions = [];
+      })
+      .addCase(fetchSimulation.fulfilled, (s, a: PayloadAction<Simulacion>) => {
+        s.current = a.payload; s.success = true; s.loading = false;
+      })
+      .addCase(advanceSimulation.fulfilled, (s, a: PayloadAction<Simulacion>) => {
+        s.current = a.payload; s.success = true; s.loading = false;
+      })
+      .addCase(buyBitcoin.fulfilled, (s, a: PayloadAction<Simulacion>) => {
+        s.current = a.payload; s.success = true; s.loading = false;
+      })
+      .addCase(sellBitcoin.fulfilled, (s, a: PayloadAction<Simulacion>) => {
+        s.current = a.payload; s.success = true; s.loading = false;
+      })
+      .addCase(updateDate.fulfilled, (s, a: PayloadAction<Simulacion>) => {
+        s.current = a.payload; s.success = true; s.loading = false;
+      })
+      .addCase(morePredictions.fulfilled, (s, a: PayloadAction<Simulacion>) => {
+        s.current = a.payload; s.success = true; s.loading = false;
+      });
+
+    builder.addCase(getBitcoinPrices.fulfilled, (s, a: PayloadAction<PrecioBTC[]>) => {
+      s.prices = (a.payload ?? []).slice().sort((A, B) => new Date(A.fecha).getTime() - new Date(B.fecha).getTime());
+      s.success = true; s.loading = false;
+    });
+
+    builder.addCase(getTransactions.fulfilled, (s, a: PayloadAction<Transaccion[]>) => {
+      s.transactions = (a.payload ?? []).slice().sort((A, B) => new Date(A.fecha).getTime() - new Date(B.fecha).getTime());
+      s.success = true; s.loading = false;
+    });
+
+    builder.addCase(getPredictions.fulfilled, (s, a: PayloadAction<number[]>) => {
+      s.predictions = a.payload ?? []; s.success = true; s.loading = false;
+    });
+
+    builder.addMatcher(
+      isAnyOf(
+        startSimulation.pending, resetSimulation.pending, fetchSimulation.pending, getBitcoinPrices.pending,
+        getTransactions.pending, advanceSimulation.pending, buyBitcoin.pending, sellBitcoin.pending,
+        getPredictions.pending, updateDate.pending, morePredictions.pending
+      ),
+      (s) => { s.loading = true; s.success = false; s.error = undefined; }
+    );
+    builder.addMatcher(
+      isAnyOf(
+        startSimulation.rejected, resetSimulation.rejected, fetchSimulation.rejected, getBitcoinPrices.rejected,
+        getTransactions.rejected, advanceSimulation.rejected, buyBitcoin.rejected, sellBitcoin.rejected,
+        getPredictions.rejected, updateDate.rejected, morePredictions.rejected
+      ),
+      (s, a) => { s.loading = false; s.success = false; s.error = (a.payload as string) ?? "Error inesperado"; }
+    );
+  },
 });
 
 export const { reset, clearPredictions } = simulacionSlice.actions;
-
 export default simulacionSlice.reducer;

@@ -30,7 +30,7 @@ export const store = configureStore({
     news: noticiaReducer,
     cartera: carteraReducer,
     bot: botReducer,
-    simulador: simuladorReducer,
+    simulation: simuladorReducer,
   },
 });
 
