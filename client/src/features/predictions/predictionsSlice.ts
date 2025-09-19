@@ -1,133 +1,94 @@
-import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
-import predictionsService from './predictionsService';
+import { createSlice, createAsyncThunk, isAnyOf, type PayloadAction } from "@reduxjs/toolkit";
+import predictionsService from "./predictionsService";
+import type {
+  PredictionsState, LastSeriesDTO, RegressionDTO,
+  LastSeriesResponse, RegressionResponse,
+} from "./types";
+import { AxiosError } from "axios";
 
-interface PredictionState {
-    cryptos: any
-    predictionIsError: boolean;
-    predictionIsSuccess: boolean;
-    predictionIsLoading: boolean;
-    predictionMessage: string;
-}
-
-const initialState: PredictionState = {
-    cryptos: {},
-    predictionIsError: false,
-    predictionIsSuccess: false,
-    predictionIsLoading: false,
-    predictionMessage: '',
+const initialState: PredictionsState = {
+  cryptos: [],
+  last: null,
+  regression: null,
+  loading: false,
+  error: undefined,
+  selected: {},
 };
 
-export const getCryptos = createAsyncThunk(
-    "predictions/getCryptos",
-    async (_, thunkAPI) => {
-        try {
-            return await predictionsService.getCryptos()
-        } catch (error) {
-            const message = (error.response && error.response.data
-                && error.response.data.message) ||
-                error.message || error.toString()
+const getErr = (e: unknown) => {
+  const ax = e as AxiosError<any>;
+  return (ax?.response?.data?.error ?? ax?.response?.data?.message ?? ax?.message ?? "Error inesperado") as string;
+};
 
-            return thunkAPI.rejectWithValue(message)
-        }
-    }
-)
+export const getCryptos = createAsyncThunk<string[], void, { rejectValue: string }>(
+  "predictions/getCryptos",
+  async (_, { rejectWithValue }) => {
+    try { return await predictionsService.getCryptos(); }
+    catch (e) { return rejectWithValue(getErr(e)); }
+  }
+);
 
-export const graphPrediction = createAsyncThunk(
-    "predictions/graphPrediction",
-    async (cryptoData:any, thunkAPI) => {
-        try {
-            return await predictionsService.graphPrediction(cryptoData)
-        } catch (error) {
-            const message = (error.response && error.response.data
-                && error.response.data.message) ||
-                error.message || error.toString()
+export const getLastSeries = createAsyncThunk<LastSeriesResponse, LastSeriesDTO, { rejectValue: string }>(
+  "predictions/getLastSeries",
+  async (payload, { rejectWithValue }) => {
+    try { return await predictionsService.fetchLastSeries(payload); }
+    catch (e) { return rejectWithValue(getErr(e)); }
+  }
+);
 
-            return thunkAPI.rejectWithValue(message)
-        }
-    }
-)
+export const getRegression = createAsyncThunk<RegressionResponse, RegressionDTO, { rejectValue: string }>(
+  "predictions/getRegression",
+  async (payload, { rejectWithValue }) => {
+    try { return await predictionsService.fetchRegression(payload); }
+    catch (e) { return rejectWithValue(getErr(e)); }
+  }
+);
 
-export const graphLast10Days = createAsyncThunk(
-    "predictions/graphLast10Days",
-    async (cryptoData:any, thunkAPI) => {
-        try {
-            return await predictionsService.graphLast10Days(cryptoData)
-        } catch (error) {
-            const message = (error.response && error.response.data
-                && error.response.data.message) ||
-                error.message || error.toString()
-
-            return thunkAPI.rejectWithValue(message)
-        }
-    }
-)
-export const predictionsSlice = createSlice({
-    name: "predictions",
-    initialState,
-    reducers: {
-        reset: (state) => {
-            state.predictionIsError = false
-            state.predictionIsLoading = false
-            state.predictionIsSuccess = false
-            state.predictionMessage = ''
-        }
+const predictionsSlice = createSlice({
+  name: "predictions",
+  initialState,
+  reducers: {
+    reset(state) {
+      state.loading = false;
+      state.error = undefined;
     },
-    extraReducers: (builder) => {
-        builder
-            .addCase( getCryptos.pending, ( state ) =>
-            {
-                state.predictionIsLoading = true
-            })
-            .addCase( getCryptos.fulfilled, ( state, action ) =>
-            {
-                state.predictionIsSuccess = true,
-                state.predictionIsLoading = false
-                state.cryptos = action.payload
-            })
-            .addCase( getCryptos.rejected, ( state, action) =>
-            {
-                state.predictionIsError = true,
-                state.predictionIsLoading = false,
-                state.predictionIsSuccess = false,
-                state.predictionMessage = action.payload
-            } )
-            .addCase( graphPrediction.pending, ( state ) =>
-            {
-                state.predictionIsLoading = true
-            })
-            .addCase( graphPrediction.fulfilled, ( state, action ) =>
-            {
-                state.predictionIsSuccess = true,
-                state.predictionIsLoading = false
-                state.cryptos = action.payload
-            })
-            .addCase( graphPrediction.rejected, ( state, action) =>
-            {
-                state.predictionIsError = true,
-                state.predictionIsLoading = false,
-                state.predictionIsSuccess = false,
-                state.predictionMessage = action.payload
-            })
-            .addCase( graphLast10Days.pending, ( state ) =>
-            {
-                state.predictionIsLoading = true
-            })
-            .addCase( graphLast10Days.fulfilled, ( state, action ) =>
-            {
-                state.predictionIsSuccess = true,
-                state.predictionIsLoading = false
-                state.cryptos = action.payload
-            })
-            .addCase( graphLast10Days.rejected, ( state, action) =>
-            {
-                state.predictionIsError = true,
-                state.predictionIsLoading = false,
-                state.predictionIsSuccess = false,
-                state.predictionMessage = action.payload
-            })
-    }
-})
+    setSelected(state, action: PayloadAction<PredictionsState["selected"]>) {
+      state.selected = { ...state.selected, ...action.payload };
+    },
+    clearData(state) {
+      state.last = null;
+      state.regression = null;
+    },
+  },
+  extraReducers: (builder) => {
+    builder
+      // fulfilled
+      .addCase(getCryptos.fulfilled, (s, a: PayloadAction<string[]>) => {
+        s.cryptos = a.payload ?? [];
+        s.loading = false; s.error = undefined;
+      })
+      .addCase(getLastSeries.fulfilled, (s, a: PayloadAction<LastSeriesResponse>) => {
+        s.last = a.payload; s.loading = false; s.error = undefined;
+        // sync selected según la última búsqueda
+        s.selected.crypto = a.payload.symbol.split("/")[0];
+        s.selected.timeframe = a.payload.timeframe;
+        s.selected.limit = a.payload.series.length;
+      })
+      .addCase(getRegression.fulfilled, (s, a: PayloadAction<RegressionResponse>) => {
+        s.regression = a.payload; s.loading = false; s.error = undefined;
+        s.selected.crypto = a.payload.symbol.split("/")[0];
+        s.selected.timeframe = a.payload.timeframe;
+        s.selected.horizon = a.payload.regression.horizon;
+      })
+      // pending/rejected comunes
+      .addMatcher(isAnyOf(getCryptos.pending, getLastSeries.pending, getRegression.pending), (s) => {
+        s.loading = true; s.error = undefined;
+      })
+      .addMatcher(isAnyOf(getCryptos.rejected, getLastSeries.rejected, getRegression.rejected), (s, a) => {
+        s.loading = false; s.error = (a.payload as string) ?? "Error inesperado";
+      });
+  },
+});
 
-export const { reset } = predictionsSlice.actions
-
-export default predictionsSlice.reducer
+export const { reset, setSelected, clearData } = predictionsSlice.actions;
+export default predictionsSlice.reducer;

@@ -1,42 +1,38 @@
-import  axios  from 'axios';
+import api from "../../api/axiosInstance";
+import type {
+  CryptosResponse, LastSeriesResponse, RegressionResponse,
+  LastSeriesDTO, RegressionDTO, Timeframe,
+} from "./types";
 
-const BACKEND_DOMAIN = "http://localhost:8000"
-const PREDICTIONS_API = `${BACKEND_DOMAIN}/predictions/api/v1/`
-const GET_GRYPTOS = `${BACKEND_DOMAIN}/predictions/api/v1/getCryptos/`
-const GRAPH_PREDICTION = `${BACKEND_DOMAIN}/predictions/api/v1/sendGraphData/`
-const LAST_10_DAYS = `${BACKEND_DOMAIN}/predictions/api/v1/sendGraphDataLast/`
+const ROOT = "/predictions/api/v1";
 
-const getCryptos = async (  ) =>
-{
+export const getCryptos = async (): Promise<string[]> => {
+  const { data } = await api.get<CryptosResponse>(`${ROOT}/cryptos`);
+  return data.cryptos ?? [];
+};
 
-    const response = await axios.get(GET_GRYPTOS,)
-    return response.data
-}
+export const fetchLastSeries = async ({
+  crypto,
+  timeframe = "1d",
+  limit = 10,
+}: LastSeriesDTO): Promise<LastSeriesResponse> => {
+  const { data } = await api.get<LastSeriesResponse>(`${ROOT}/series/last`, {
+    params: { crypto, timeframe, limit },
+  });
+  return data;
+};
 
-const graphPrediction = async ( cryptoData:any  ) =>
-{
-    console.log(cryptoData.crypto)
-    const config = {
-        params: {
-            crypto:cryptoData.crypto
-        }
-    }
-    const response = await axios.get(GRAPH_PREDICTION,config)
-    return response.data
-}
+export const fetchRegression = async ({
+  crypto,
+  timeframe = "1d",
+  limit = 500,
+  horizon = 500,
+}: RegressionDTO): Promise<RegressionResponse> => {
+  const { data } = await api.get<RegressionResponse>(`${ROOT}/series/regression`, {
+    params: { crypto, timeframe, limit, horizon },
+  });
+  return data;
+};
 
-const graphLast10Days = async ( cryptoData:any  ) =>
-{
-    console.log(cryptoData.crypto)
-    const config = {
-        params: {
-            crypto:cryptoData.crypto
-        }
-    }
-    const response = await axios.get(LAST_10_DAYS,config)
-    return response.data
-}
-
-const predictionsService = { getCryptos, graphPrediction, graphLast10Days }
-
-export default predictionsService 
+const predictionsService = { getCryptos, fetchLastSeries, fetchRegression };
+export default predictionsService;
