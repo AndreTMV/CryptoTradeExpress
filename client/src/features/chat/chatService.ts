@@ -1,35 +1,39 @@
-import  axios  from 'axios';
+import api from "../../api/axiosInstance";
+import type {
+  ChatMessage,
+  SendMessageDTO,
+  PerfilPreview,
+} from "./types";
 
-const BACKEND_DOMAIN = "http://localhost:8000"
-const CHAT_API = `${BACKEND_DOMAIN}/chat/api/v1/`
-const GET_MESSAGES = `${BACKEND_DOMAIN}/chat/my-message/`
-const GET_MESSAGES_USERS = `${BACKEND_DOMAIN}/chat/get-message/`
-const SEND_MESSAGE = `${BACKEND_DOMAIN}/chat/send-message/`
-const SEARCH_USER = `${BACKEND_DOMAIN}/chat/search/`
+const MY_MESSAGES = "/chat/my-message";            // /chat/my-message/<user_id>/
+const GET_MESSAGES = "/chat/get-message";          // /chat/get-message/<sender>/<receiver>/
+const SEND_MESSAGE = "/chat/send-message/";        // POST
+const SEARCH = "/chat/search";                     // /chat/search/<username>/
 
-
-const getMyMessages = async (userId: number) => {
-    const response = await axios.get(`${GET_MESSAGES}${userId}/`);
-    return response.data;
+export async function getMyMessages(userId: number): Promise<ChatMessage[]> {
+  const { data } = await api.get<ChatMessage[]>(`${MY_MESSAGES}/${userId}/`);
+  return data;
 }
 
-const getMessages = async (senderId: number, receiverId:number) => {
-    const response = await axios.get(`${GET_MESSAGES_USERS}${senderId}/${receiverId}/`);
-    return response.data;
+export async function getMessages(
+  senderId: number,
+  receiverId: number
+): Promise<ChatMessage[]> {
+  const { data } = await api.get<ChatMessage[]>(
+    `${GET_MESSAGES}/${senderId}/${receiverId}/`
+  );
+  return data;
 }
 
-const sendMessage = async (messageData:any) => {
-    const response = await axios.post(SEND_MESSAGE, messageData);
-    return response.data;
+export async function sendMessage(payload: SendMessageDTO): Promise<ChatMessage> {
+  const { data } = await api.post<ChatMessage>(SEND_MESSAGE, payload);
+  return data;
 }
 
-const searchUser = async (username:any) => {
-    const response = await axios.get(`${SEARCH_USER}${username}/`);
-    return response.data;
+export async function searchUser(username: string): Promise<PerfilPreview[]> {
+  const { data } = await api.get<PerfilPreview[]>(`${SEARCH}/${encodeURIComponent(username)}/`);
+  return data;
 }
 
-
-
-const chatService = { getMyMessages, getMessages, sendMessage, searchUser }
-
-export default chatService 
+const chatService = { getMyMessages, getMessages, sendMessage, searchUser };
+export default chatService;

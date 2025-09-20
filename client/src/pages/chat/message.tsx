@@ -1,115 +1,208 @@
-import React, { useState, useEffect } from 'react';
-import { useDispatch } from 'react-redux';
-import { useSelector } from 'react-redux';
-import { Link, useNavigate } from 'react-router-dom';
-import { getMyMessages, searchUser } from '../../features/chat/chatSlice';
-import { RootState } from '../../app/store';
-import moment from 'moment';
-import { toast } from 'react-hot-toast';
+import React from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
+import type { RootState, AppDispatch } from "../../app/store";
+import {
+  fetchInbox,
+  searchUsers,
+  reset as chatReset,
+} from "../../features/chat/chatSlice";
+import type { DMessage, DUserProfile } from "../../features/chat/types";
+import moment from "moment";
+import { toast } from "react-hot-toast";
 
-function Message()
-{
-  const dispatch = useDispatch();
+const fmtWhen = (iso: string) => moment.utc(iso).local().startOf("seconds").fromNow();
+
+const Inbox: React.FC = () => {
+  const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
-  const { userInfo, isStaff, isError, isLoading } = useSelector( ( state: RootState ) => state.auth );
-  const { message } = useSelector( ( state: RootState ) => state.chat );
-  const [messages, setMessages] = useState( [] );
-  const [newSearches, setSearches] = useState( { search: '' } );
 
-  const handleChange = ( evt ) =>
-  {
-    setSearches( {
-      ...newSearches,
-      [evt.target.name]: evt.target.value,
-    } );
+  const meId = useSelector((s: RootState) => s.auth.userInfo?.id);
+  const chat = useSelector((s: RootState) => s.chat);
+  const { inbox = [], loading, error } = chat;
+
+  const [query, setQuery] = React.useState("");
+  const [results, setResults] = React.useState<DUserProfile[]>([]);
+  const [searching, setSearching] = React.useState(false);
+
+  // Cargar conversaciones (último mensaje por peer)
+  React.useEffect(() => {
+    if (!meId) return;
+    dispatch(fetchInbox(meId))
+      .unwrap()
+      .catch((e) => {
+        console.error(e);
+        toast.error("No se pudo cargar tu bandeja.");
+      });
+    return () => {
+      dispatch(chatReset());
+    };
+  }, [dispatch, meId]);
+
+  // Debounced search
+  React.useEffect(() => {
+    if (!query.trim()) {
+      setResults([]);
+      setSearching(false);
+      return;
+    }
+    const id = window.setTimeout(async () => {
+      try {
+        setSearching(true);
+        const res = await dispatch(searchUsers(query.trim())).unwrap();
+        setResults(res || []);
+      } catch (e: any) {
+        // El backend devuelve 404 cuando no encuentra usuarios
+        setResults([]);
+      } finally {
+        setSearching(false);
+      }
+    }, 350);
+    return () => window.clearTimeout(id);
+  }, [dispatch, query]);
+
+  // Navegar a conversación al elegir resultado
+  const goToDM = (peerUserId: number) => {
+    navigate(`/inbox/${peerUserId}`);
   };
 
-  const SearchUser = async () =>
-  {
-    try
-    {
-      const search = await dispatch( searchUser( newSearches.username ) );
-      console.log( search.payload );
-      navigate( '/search/' + newSearches.username );
-    } catch ( error )
-    {
-      console.log( error );
-      toast.error( 'El usuario no existe' );
-    }
+  // Derivar peerId + nombre a partir del mensaje (último msg del peer)
+  const peerInfo = (m: DMessage) => {
+    const peerId = m.sender === meId ? m.receiver : m.sender;
+    const name =
+      m.sender === meId
+        ? m.receiver_profile?.name || (m as any).receiver_profile?.username || String(peerId)
+        : m.sender_profile?.name || (m as any).sender_profile?.username || String(peerId);
+    return { peerId, name };
   };
-
-  async function getUserMessages( userId: number )
-  {
-    const myMessages = await dispatch( getMyMessages( userId ) );
-    return myMessages;
-  }
-
-  useEffect( () =>
-  {
-    try
-    {
-      getUserMessages( userInfo.id ).then( ( res ) =>
-      {
-        setMessages( ( prevState ) => res.payload );
-      } );
-    } catch ( error )
-    {
-      console.log( error );
-    }
-  }, [] );
 
   return (
-    <div>
-      <main className="content mt-24">
-        <div className="container mx-auto bg-white p-3 rounded-lg">
-          <h1 className="text-2xl mb-6 text-gray-900">Messages</h1>
-          <div className="flex">
-            <div className="w-1/3 ">
-              <div className="px-4 hidden md:block">
-                <div className="flex items-center">
-                  <div className="flex-grow mr-2">
-                    <input
-                      type="text"
-                      className="form-input my-3 px-4 py-2 text-gray-900 rounded-md bg-gray-100 focus:outline-none focus:bg-white"
-                      placeholder="Search..."
-                      onChange={handleChange}
-                      name="username"
-                    />
-                  </div>
-                  <button className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 focus:outline-none focus:bg-blue-600" onClick={SearchUser}>
-                    <i className="fas fa-search"></i>Search
-                  </button>
-                </div>
-              </div>
-              {messages.map( ( message ) => (
-                <Link
-                  to={'/inbox/' + ( message.sender === userInfo.id ? message.receiver : message.sender ) + '/'}
-                  className="block border-b border-gray-200 p-3 hover:bg-gray-100 relative">
-                  <div className="flex items-center text-gray-900">
-                    <div className="flex-grow-1">
-                      {message.sender === userInfo.id &&
-                        ( message.receiver_profile.name !== null ? message.receiver_profile.name : message.receiver.username )}
-                      {message.sender !== userInfo.id && message.sender_profile.name}
-                      <div className="text-sm text-gray-500">
-                        <span className="fas fa-circle text-green-500 mr-1"></span>
-                        {message.message}
-                      </div>
-                    </div>
-                    <span className="text-sm text-gray-500 absolute bottom-0 right-0">
-                      {moment.utc( message.date ).local().startOf( 'seconds' ).fromNow()}
-                    </span>
-                  </div>
-                </Link>
-              ) )}
-            </div>
-          </div>
-          <button className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded ml-10 mt-3">
-            <Link to="/dashboard">Regresar</Link>
+    <div className="mx-auto mt-20 max-w-3xl p-3 sm:p-4">
+      {/* Header */}
+      <div className="mb-3 rounded-2xl bg-white px-4 py-3 shadow ring-1 ring-slate-200">
+        <div className="flex items-center justify-between">
+          <h1 className="text-xl font-extrabold tracking-tight text-indigo-900">
+            Mensajes
+          </h1>
+          <Link
+            to="/dashboard"
+            className="rounded-lg bg-slate-700 px-3 py-1.5 text-sm font-semibold text-white hover:bg-slate-800"
+          >
+            Regresar
+          </Link>
+        </div>
+
+        {/* Buscador */}
+        <div className="mt-3 flex items-center gap-2">
+          <input
+            type="text"
+            placeholder="Buscar por nombre, usuario o email…"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && results[0]?.username) {
+                goToDM(results[0].username); // username = userId en tu Perfil
+              }
+            }}
+            className="flex-1 rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-900 placeholder:text-slate-400 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+          />
+          <button
+            onClick={() => results[0]?.username && goToDM(results[0].username)}
+            className="rounded-xl bg-indigo-600 px-4 py-2 font-semibold text-white shadow hover:bg-indigo-700 disabled:opacity-60"
+            disabled={!results.length}
+          >
+            Abrir
           </button>
         </div>
-      </main>
+
+        {/* Resultados de búsqueda (dropdown simple) */}
+        {!!query && (
+          <div className="mt-2 max-h-56 overflow-y-auto rounded-xl border border-slate-200 bg-white shadow-sm">
+            {searching ? (
+              <div className="p-3 text-sm text-slate-500">Buscando…</div>
+            ) : results.length === 0 ? (
+              <div className="p-3 text-sm text-slate-500">Sin resultados</div>
+            ) : (
+              <ul className="divide-y divide-slate-200">
+                {results.map((p) => (
+                  <li key={p.id} className="p-3 hover:bg-slate-50">
+                    <button
+                      onClick={() => goToDM(p.username)} // Perfil.username == ID de usuario
+                      className="flex w-full items-center justify-between"
+                    >
+                      <div className="text-left">
+                        <div className="text-sm font-semibold text-slate-800">
+                          {p.name || String(p.username)}
+                        </div>
+                        <div className="text-xs text-slate-500">ID: {p.username}</div>
+                      </div>
+                      <span className="text-xs text-indigo-600">Abrir chat</span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Lista de conversaciones */}
+      <div className="rounded-2xl bg-white shadow ring-1 ring-slate-200">
+        {loading && inbox.length === 0 ? (
+          <div className="p-3 sm:p-4">
+            <div className="space-y-3">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} className="h-14 animate-pulse rounded-xl bg-slate-200" />
+              ))}
+            </div>
+          </div>
+        ) : inbox.length === 0 ? (
+          <div className="p-10 text-center text-slate-500">
+            Aún no tienes conversaciones. Busca a alguien arriba para empezar.
+          </div>
+        ) : (
+          <ul className="divide-y divide-slate-200">
+            {inbox.map((m: DMessage) => {
+              const { peerId, name } = peerInfo(m);
+              return (
+                <li key={m.id}>
+                  <Link
+                    to={`/inbox/${peerId}`}
+                    className="flex items-center gap-3 px-4 py-3 hover:bg-slate-50"
+                  >
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between">
+                        <div className="text-sm font-semibold text-slate-900">{name}</div>
+                        <div className="text-xs text-slate-500">{fmtWhen(m.date)}</div>
+                      </div>
+                      <div className="mt-0.5 line-clamp-1 text-sm text-slate-600">
+                        {m.message}
+                      </div>
+                    </div>
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+        {error && (
+          <div className="border-t border-rose-100 bg-rose-50 p-3 text-sm text-rose-700">
+            {error}
+          </div>
+        )}
+      </div>
+
+      {/* Back (mobile) */}
+      <div className="mt-3 text-center sm:hidden">
+        <Link
+          to="/dashboard"
+          className="inline-block rounded-lg bg-slate-700 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800"
+        >
+          Regresar
+        </Link>
+      </div>
     </div>
   );
-}
+};
 
-export default Message;
+export default Inbox;
