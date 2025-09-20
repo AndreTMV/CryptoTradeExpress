@@ -35,7 +35,6 @@ daphne==4.1.0
 defusedxml==0.8.0rc2
 Django==5.0.2
 django-celery-beat==2.6.0
-django-channels==0.7.0
 django-cors-headers==4.3.1
 django-environ==0.11.2
 django-formtools==2.5.1
