@@ -58,7 +58,7 @@ const CreateQuizPage: React.FC = () => {
     }
   };
 
-  const disabled = isLoading || title.trim().length < 3 || !videoId;
+  const disabled = title.trim().length < 3 || !videoId;
 
   return (
     <div className="mx-auto flex min-h-[calc(100vh-120px)] w-full max-w-xl items-center justify-center px-4">
@@ -110,12 +110,13 @@ const CreateQuizPage: React.FC = () => {
           </button>
         </div>
 
-        {isLoading && (
-          <div className="mt-4 flex items-center justify-center gap-3">
-            <Spinner />
-            <span className="text-sm text-slate-600">Creando…</span>
-          </div>
-        )}
+        {//isLoading && (
+          //<div className="mt-4 flex items-center justify-center gap-3">
+          //<Spinner />
+          //<span className="text-sm text-slate-600">Creando…</span>
+          //</div>
+          //)
+        }
       </form>
     </div>
   );
